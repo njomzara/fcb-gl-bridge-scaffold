@@ -1,0 +1,24 @@
+"! /FCBP/GLT_MSG - operator-safe normalized messages.
+@EndUserText.label : 'GL Transfer Message'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_msg {
+  key client              : abap.clnt not null;
+  key message_id          : abap.char(32) not null;
+  transfer_id             : abap.char(32) not null;
+  error_id                : abap.char(32);
+  severity                : abap.char(10) not null;
+  category                : abap.char(24);
+  msgid                   : abap.char(20);
+  msgno                   : abap.numc(3);
+  msgv1                   : abap.char(50);
+  msgv2                   : abap.char(50);
+  msgv3                   : abap.char(50);
+  msgv4                   : abap.char(50);
+  operator_text           : abap.char(220);
+  context_ref             : abap.char(255);
+  created_at              : utclong not null;
+  created_by              : abap.char(12) not null;
+}

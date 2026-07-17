@@ -1,0 +1,21 @@
+@EndUserText.label: 'GL Transfer Core Service'
+define service /fcbp/ui_glt_transfer {
+  expose /fcbp/c_glt_monitor    as TransferMonitor;
+  expose /fcbp/c_glt_exceptions as TransferExceptions;
+  expose /fcbp/c_glt_queue      as TransferQueue;
+  expose /fcbp/c_glt_timeline   as TransferTimeline;
+  expose /fcbp/c_glt_recon      as TransferReconciliation;
+  expose /fcbp/c_glt_handoff    as SourceHandoff;
+  expose /fcbp/c_glt_source_read as SourceReadDiagnostics;
+  expose /fcbp/i_glt_attempt    as TransferAttempts;
+  expose /fcbp/c_glt_package_detail as TransferPackages;
+  expose /fcbp/c_glt_split_result   as PackageSplitResults;
+  expose /fcbp/c_glt_validation     as PackageValidation;
+  expose /fcbp/c_glt_validation_find as PackageValidationFindings;
+  expose /fcbp/c_glt_mapping        as PackageMapping;
+  expose /fcbp/c_glt_mapping_finding as PackageMappingFindings;
+  expose /fcbp/c_glt_jobrun     as JobRuns;
+  expose /fcbp/i_glt_message    as TransferMessages;
+  expose /fcbp/c_glt_audit_log  as TransferAudit;
+  expose /fcbp/i_glt_jobrun     as TransferJobRuns;
+}

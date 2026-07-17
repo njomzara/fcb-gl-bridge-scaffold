@@ -1,0 +1,22 @@
+"! /FCBP/CC_GLVAL - validation rule configuration.
+@EndUserText.label : 'GL Transfer Validation Rule'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #C
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/cc_glval {
+  key client                : abap.clnt not null;
+  key validation_profile_id : abap.char(20) not null;
+  key rule_id               : abap.char(30) not null;
+  key version               : abap.int4 not null;
+  active_flag               : abap.flag not null;
+  config_hash               : abap.char(64);
+  rule_category             : abap.char(30);
+  severity                  : abap.char(10);
+  blocking_flag             : abap.flag;
+  target_scope              : abap.char(40);
+  field_scope               : abap.char(40);
+  policy_expression_ref     : abap.char(80);
+  changed_by                : abap.char(12);
+  changed_at                : utclong;
+}

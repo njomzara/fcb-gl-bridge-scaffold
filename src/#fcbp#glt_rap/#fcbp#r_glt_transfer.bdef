@@ -1,0 +1,23 @@
+"! RAP behavior scaffold for monitor and controlled operator actions.
+managed implementation in class /fcbp/bp_glt_transfer unique;
+strict ( 2 );
+
+define behavior for /fcbp/c_glt_monitor alias Transfer
+persistent table /fcbp/glt_hdr
+lock master
+authorization master ( instance )
+{
+  field ( readonly ) TransferId, ExternalStatus, StatusCode, TransferType,
+                     InternalState, ConfirmationPending, OperatorActionRequired,
+                     LastErrorId,
+                     SourceSystem, SourceType, SourceRefId, CompanyCode,
+                     TargetSystem, TargetAdapter, CorrelationId, IdempotencyKey,
+                     CreatedAt, ChangedAt;
+
+  action requestReprocess result [1] $self;
+  action queryStatus result [1] $self;
+  action cancelTransfer result [1] $self;
+  action retryNow result [1] $self;
+  action rebuildAfterCorrection result [1] $self;
+  action markDuplicateResolved result [1] $self;
+}

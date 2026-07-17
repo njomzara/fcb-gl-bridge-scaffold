@@ -1,0 +1,29 @@
+"! /FCBP/GLT_VALFND - append-only validation findings.
+@EndUserText.label : 'GL Transfer Validation Finding'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_valfnd {
+  key client            : abap.clnt not null;
+  key validation_run_id : abap.char(32) not null;
+  key finding_seq       : abap.int4 not null;
+  transfer_id           : abap.char(32) not null;
+  package_id            : abap.char(32) not null;
+  outdoc_id             : abap.char(32);
+  line_no               : abap.numc(6);
+  field_name            : abap.char(40);
+  rule_id               : abap.char(30);
+  rule_category         : abap.char(30);
+  severity              : abap.char(10);
+  blocking_flag         : abap.flag;
+  message_code          : abap.char(40);
+  operator_text         : abap.char(220);
+  technical_detail_ref  : abap.char(255);
+  remediation_owner     : abap.char(20);
+  target_id             : abap.char(20);
+  policy_version        : abap.int4;
+  message_id            : abap.char(32);
+  created_at            : utclong;
+  created_by            : abap.char(12);
+}

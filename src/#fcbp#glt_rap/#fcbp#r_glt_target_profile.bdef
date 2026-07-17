@@ -1,0 +1,26 @@
+"! RAP behavior scaffold for governed target-profile maintenance.
+managed implementation in class /fcbp/bp_glt_target_profile unique;
+strict ( 2 );
+
+define behavior for /fcbp/c_glt_target_profile alias TargetProfile
+persistent table /fcbp/cc_gltgt
+lock master
+authorization master ( instance )
+{
+  create;
+  update;
+
+  field ( readonly ) ConfigHash, ConfigVersion, HealthState,
+                     ChangedBy, ChangedAt, ActivatedBy, ActivatedAt;
+
+  field ( mandatory ) TargetId, TargetType, AdapterType,
+                      TransferMode, ConfirmationMode;
+
+  action validate result [1] $self;
+  action checkHealth result [1] $self;
+  action activate result [1] $self;
+  action deactivate result [1] $self;
+  action copyProfile result [1] $self;
+  action createNewVersion result [1] $self;
+  action displayUsageImpact result [1] $self;
+}

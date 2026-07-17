@@ -1,0 +1,31 @@
+"! /FCBP/GLT_REG - Source Handoff registration and atomic duplicate-prevention anchor.
+"! Source Handoff owns writes. Do not implement lookup-then-insert duplicate prevention.
+@EndUserText.label : 'GL Source Registration'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_reg {
+  key client                  : abap.clnt not null;
+  key registration_key        : abap.char(64) not null;
+  source_type                 : abap.char(20) not null;
+  source_reference            : abap.char(50) not null;
+  source_doc_no               : abap.char(20);
+  reconciliation_key          : abap.char(32);
+  event_type                  : abap.char(30);
+  event_id                    : abap.char(50);
+  routing_bucket              : abap.char(32) not null;
+  target_id                   : abap.char(20) not null;
+  processing_mode             : abap.char(10) not null;
+  transfer_id                 : abap.char(32);
+  registration_status         : abap.char(12) not null;
+  reserved_by                 : abap.char(40) not null;
+  reserved_at                 : utclong not null;
+  completed_at                : utclong;
+  expires_at                  : utclong;
+  duplicate_of_transfer_id    : abap.char(32);
+  last_error_code             : abap.char(40);
+  created_at                  : utclong not null;
+  changed_at                  : utclong not null;
+}
+

@@ -1,0 +1,22 @@
+"! RAP behavior scaffold for the test cockpit run root.
+managed implementation in class /fcbp/bp_glt_tc_run unique;
+strict ( 2 );
+
+define behavior for /fcbp/c_glt_tc_run alias TestRun
+persistent table /fcbp/glt_tcrun
+lock master
+authorization master ( global )
+{
+  field ( readonly ) RunId, ScenarioId, CommandId, CommandText,
+                     RunStatus, StatusCriticality, StatusText,
+                     TransferId, PackageId, OutboxId, PolicyContextId,
+                     ValidationRunId, MappingRunId, TargetDocumentNumber,
+                     SourceReference, SourceDocumentNumber, CompanyCode,
+                     TargetId, FinalStatus, OutboxStatus, ValidationStatus,
+                     MappingStatus, SeededSourceCount, TransferItemCount,
+                     WorkItemCount, CanonicalLineCount, TargetTreeNodeCount,
+                     CreatedBy, StartedAt, FinishedAt, DurationMs, MessageText;
+
+  static action kickoffHappyPath result [1] $self;
+  action refreshRun result [1] $self;
+}

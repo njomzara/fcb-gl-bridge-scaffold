@@ -1,0 +1,44 @@
+"! /FCBP/GLT_AUD - immutable audit events.
+@EndUserText.label : 'GL Transfer Audit Event'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_aud {
+  key client        : abap.clnt not null;
+  key audit_id      : abap.char(32) not null;
+  transfer_id       : abap.char(32);
+  event_type        : abap.char(30) not null;
+  event_subtype     : abap.char(30);
+  event_category    : abap.char(30);
+  source_type       : abap.char(20);
+  source_reference  : abap.char(50);
+  company_code      : abap.char(4);
+  target_id         : abap.char(20);
+  routing_bucket    : abap.char(32);
+  package_id        : abap.char(32);
+  outbox_id         : abap.char(32);
+  attempt_id        : abap.char(32);
+  ref_id            : abap.char(32);
+  jobrun_id         : abap.char(32);
+  config_object_type : abap.char(30);
+  config_object_key : abap.char(80);
+  config_version    : abap.char(20);
+  support_ticket_id : abap.char(40);
+  support_session_id : abap.char(40);
+  correlation_id    : abap.char(64);
+  request_id        : abap.char(64);
+  decision_outcome  : abap.char(30);
+  actor_type        : abap.char(12) not null;
+  actor_id          : abap.char(40);
+  reason_code       : abap.char(30);
+  message_id        : abap.char(32);
+  old_value_hash    : abap.char(64);
+  new_value_hash    : abap.char(64);
+  evidence_ref      : abap.char(255);
+  retention_class   : abap.char(20);
+  legal_hold        : abap.flag;
+  criticality       : abap.char(20);
+  redaction_profile : abap.char(30);
+  created_at        : utclong not null;
+}

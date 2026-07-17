@@ -1,0 +1,6 @@
+@EndUserText.label: 'GL Transfer Configuration Health Service'
+define service /fcbp/ui_glt_config_health {
+  expose /fcbp/c_glt_config_health  as HealthFindings;
+  expose /fcbp/c_glt_target_profile as TargetProfiles;
+  expose /fcbp/i_glt_policy_context as RuntimePolicyContexts;
+}

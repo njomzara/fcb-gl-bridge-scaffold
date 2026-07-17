@@ -1,0 +1,23 @@
+"! /FCBP/CC_GLCONF - confirmation and status-query policy.
+@EndUserText.label : 'GL Transfer Confirmation Policy'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #C
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/cc_glconf {
+  key client                : abap.clnt not null;
+  key confirmation_policy_id : abap.char(20) not null;
+  key version               : abap.int4 not null;
+  active_flag               : abap.flag not null;
+  lifecycle_state           : abap.char(20);
+  config_hash               : abap.char(64);
+  confirmation_mode         : abap.char(20);
+  status_query_required     : abap.flag;
+  poll_interval_sec         : abap.int4;
+  max_poll_duration_sec     : abap.int4;
+  status_handle_type        : abap.char(30);
+  unknown_behavior          : abap.char(30);
+  safe_retry_after_negative_query : abap.flag;
+  changed_by                : abap.char(12);
+  changed_at                : utclong;
+}

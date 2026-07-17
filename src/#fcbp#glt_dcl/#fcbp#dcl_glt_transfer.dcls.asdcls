@@ -1,0 +1,15 @@
+@EndUserText.label: 'GL Transfer DCL Baseline'
+@MappingRole: true
+define role /fcbp/dcl_glt_transfer {
+  grant select on /fcbp/c_glt_monitor
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CC, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_exceptions
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CC, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_queue
+    where TargetId = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_provider_ops
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CC, BUKRS, ACTVT = '03' );
+}

@@ -1,0 +1,36 @@
+"! /FCBP/GLT_ATT - adapter submit/query attempt evidence.
+@EndUserText.label : 'GL Transfer Attempt'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_att {
+  key client              : abap.clnt not null;
+  key attempt_id          : abap.char(32) not null;
+  transfer_id             : abap.char(32) not null;
+  outbox_id               : abap.char(32);
+  jobrun_id               : abap.char(32);
+  attempt_no              : abap.int4 not null;
+  attempt_type            : abap.char(20) not null;
+  package_id              : abap.char(32);
+  outdoc_id               : abap.char(32);
+  policy_context_id       : abap.char(32);
+  target_system           : abap.char(30);
+  target_adapter          : abap.char(30);
+  destination_alias       : abap.char(40);
+  correlation_id          : abap.char(64);
+  idempotency_key_hash    : abap.char(64);
+  middleware_message_id   : abap.char(80);
+  target_status_handle    : abap.char(80);
+  outcome                 : abap.char(20);
+  retryable               : abap.flag;
+  unknown_confirmation    : abap.flag;
+  request_hash            : abap.char(64);
+  response_hash           : abap.char(64);
+  raw_request_ref         : abap.char(255);
+  raw_response_ref        : abap.char(255);
+  error_id                : abap.char(32);
+  started_at              : utclong not null;
+  finished_at             : utclong;
+  created_by              : abap.char(12) not null;
+}

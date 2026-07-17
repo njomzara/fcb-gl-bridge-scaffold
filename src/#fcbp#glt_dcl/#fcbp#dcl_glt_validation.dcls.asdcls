@@ -1,0 +1,15 @@
+@EndUserText.label: 'GL Transfer Validation DCL Baseline'
+@MappingRole: true
+define role /fcbp/dcl_glt_validation {
+  grant select on /fcbp/c_glt_validation
+    where TargetId = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_validation_find
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CC, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_val_run
+    where ValidationProfileId = aspect pfcg_auth( FCBP_GLT_CFG, GLT_POL, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_val_find
+    where TargetId = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+}

@@ -1,0 +1,27 @@
+"! /FCBP/GLT_DOC - outbound document header produced by split.
+@EndUserText.label : 'GL Transfer Outbound Document'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_doc {
+  key client             : abap.clnt not null;
+  key package_id         : abap.char(32) not null;
+  key outdoc_id          : abap.char(32) not null;
+  document_sequence      : abap.int4 not null;
+  company_code           : abap.char(4);
+  posting_date           : abap.dats;
+  document_date          : abap.dats;
+  gl_doc_type            : abap.char(10);
+  currency               : abap.cuky;
+  ledger_group           : abap.char(10);
+  reference              : abap.char(50);
+  header_text            : abap.char(80);
+  balance_status         : abap.char(20);
+  debit_amount           : abap.dec(23,2);
+  credit_amount          : abap.dec(23,2);
+  difference_amount      : abap.dec(23,2);
+  line_count             : abap.int4;
+  payload_hash           : abap.char(64);
+  created_at             : utclong;
+}

@@ -1,0 +1,6 @@
+@EndUserText.label: 'GL Transfer Mapping Service'
+define service /fcbp/ui_glt_mapping {
+  expose /fcbp/c_glt_mapping         as MappingEvents;
+  expose /fcbp/c_glt_mapping_finding as MappingFindings;
+  expose /fcbp/i_glt_mapping_rule    as MappingRules;
+}

@@ -1,0 +1,22 @@
+"! /FCBP/CC_GLTHROT - target load and backlog throttling policy.
+@EndUserText.label : 'GL Transfer Throttle Policy'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #C
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/cc_glthrot {
+  key client             : abap.clnt not null;
+  key throttle_policy_id : abap.char(20) not null;
+  key version            : abap.int4 not null;
+  active_flag            : abap.flag not null;
+  lifecycle_state        : abap.char(20);
+  config_hash            : abap.char(64);
+  max_parallel           : abap.int4;
+  max_per_run            : abap.int4;
+  rate_limit             : abap.int4;
+  dispatch_window        : abap.char(80);
+  retry_backlog_limit    : abap.int4;
+  poll_backlog_limit     : abap.int4;
+  changed_by             : abap.char(12);
+  changed_at             : utclong;
+}

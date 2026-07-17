@@ -1,0 +1,22 @@
+"! /FCBP/GLT_REF - downstream target document/export references.
+@EndUserText.label : 'GL Transfer Target Reference'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_ref {
+  key client             : abap.clnt not null;
+  key ref_id             : abap.char(32) not null;
+  transfer_id            : abap.char(32) not null;
+  target_system          : abap.char(30) not null;
+  target_adapter         : abap.char(30) not null;
+  target_doc_no          : abap.char(30);
+  target_company_code    : abap.char(4);
+  target_fiscal_year     : abap.numc(4);
+  target_corr_id         : abap.char(64);
+  confirmation_mode      : abap.char(20);
+  confirmed_at           : utclong;
+  raw_ref_hash           : abap.char(64);
+  created_at             : utclong not null;
+}
+

@@ -1,0 +1,35 @@
+"! /FCBP/GLT_PKG - package header/version evidence for shaped transfer output.
+@EndUserText.label : 'GL Transfer Package'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_pkg {
+  key client                 : abap.clnt not null;
+  key package_id             : abap.char(32) not null;
+  transfer_id                : abap.char(32) not null;
+  package_version            : abap.int4 not null;
+  current_flag               : abap.flag;
+  package_status             : abap.char(20);
+  predecessor_package_id     : abap.char(32);
+  superseded_by_package_id   : abap.char(32);
+  source_type                : abap.char(20);
+  source_reference           : abap.char(50);
+  target_id                  : abap.char(20);
+  policy_context_id          : abap.char(32);
+  aggregation_profile_id     : abap.char(20);
+  aggregation_version        : abap.int4;
+  aggregation_hash           : abap.char(64);
+  split_profile_id           : abap.char(20);
+  split_version              : abap.int4;
+  split_hash                 : abap.char(64);
+  source_hash                : abap.char(64);
+  aggregation_output_hash    : abap.char(64);
+  split_output_hash          : abap.char(64);
+  payload_hash               : abap.char(64);
+  outdoc_count               : abap.int4;
+  canonical_line_count       : abap.int4;
+  trace_count                : abap.int4;
+  created_by                 : abap.char(12);
+  created_at                 : utclong;
+}

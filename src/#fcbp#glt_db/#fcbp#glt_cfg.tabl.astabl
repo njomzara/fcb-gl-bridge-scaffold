@@ -1,0 +1,23 @@
+"! /FCBP/GLT_CFG - transfer type behavior configuration.
+@EndUserText.label : 'GL Transfer Configuration'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #C
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_cfg {
+  key client                  : abap.clnt not null;
+  key transfer_type           : abap.char(20) not null;
+  active                      : abap.flag not null;
+  description                 : abap.char(80);
+  balance_required            : abap.flag;
+  period_check_mode           : abap.char(20);
+  default_max_retry           : abap.int4;
+  default_backoff_sec         : abap.int4;
+  allow_manual_reprocess      : abap.flag;
+  redaction_profile           : abap.char(30);
+  valid_from                  : abap.dats;
+  valid_to                    : abap.dats;
+  changed_by                  : abap.char(12);
+  changed_at                  : utclong;
+}
+

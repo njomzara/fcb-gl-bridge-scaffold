@@ -1,0 +1,27 @@
+"! /FCBP/CC_GLRETRY - retry policy controls.
+@EndUserText.label : 'GL Transfer Retry Policy'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #C
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/cc_glretry {
+  key client            : abap.clnt not null;
+  key retry_policy_id   : abap.char(20) not null;
+  key version           : abap.int4 not null;
+  active_flag           : abap.flag not null;
+  lifecycle_state       : abap.char(20);
+  valid_from            : abap.dats;
+  valid_to              : abap.dats;
+  config_hash           : abap.char(64);
+  max_attempts          : abap.int4;
+  retryable_categories  : abap.char(120);
+  initial_delay_sec     : abap.int4;
+  max_delay_sec         : abap.int4;
+  backoff_model         : abap.char(20);
+  jitter_policy         : abap.char(30);
+  exhaustion_behavior   : abap.char(30);
+  poll_before_retry     : abap.flag;
+  operator_action_rule  : abap.char(30);
+  changed_by            : abap.char(12);
+  changed_at            : utclong;
+}

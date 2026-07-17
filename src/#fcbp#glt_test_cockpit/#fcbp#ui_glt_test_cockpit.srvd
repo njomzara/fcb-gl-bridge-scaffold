@@ -1,0 +1,10 @@
+@EndUserText.label: 'GLT Test Cockpit Service'
+define service /fcbp/ui_glt_test_cockpit {
+  expose /fcbp/c_glt_tc_run     as TestRuns;
+  expose /fcbp/c_glt_tc_seed    as SeededSourceData;
+  expose /fcbp/c_glt_tc_item    as TransferItems;
+  expose /fcbp/c_glt_tc_work    as WorkItems;
+  expose /fcbp/c_glt_tc_time    as StatusAuditTimeline;
+  expose /fcbp/c_glt_tc_canon   as CanonicalGLItems;
+  expose /fcbp/c_glt_tc_tgtnode as MockTargetDocumentTree;
+}

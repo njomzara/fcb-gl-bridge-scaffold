@@ -1,0 +1,15 @@
+{
+  "global": {
+    "files": "/src/**/*.*"
+  },
+  "syntax": {
+    "version": "v758",
+    "errorNamespace": "^(\\/FCBP\\/|Z|Y)"
+  },
+  "rules": {
+    "parser_error": true,
+    "global_class": true,
+    "allowed_object_naming": false
+  }
+}
+

@@ -1,0 +1,26 @@
+"! /FCBP/GLT_OUTBOX - Durable asynchronous work queue.
+"! Source Handoff creates initial DISPATCH work. Outbox Execution owns later claim/attempt updates.
+@EndUserText.label : 'GL Transfer Outbox Work'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_outbox {
+  key client             : abap.clnt not null;
+  key outbox_id          : abap.char(32) not null;
+  transfer_id            : abap.char(32) not null;
+  work_type              : abap.char(20) not null;
+  due_at                 : utclong not null;
+  priority               : abap.int4;
+  target_id              : abap.char(20);
+  processing_mode        : abap.char(10);
+  processing_status      : abap.char(12) not null;
+  lock_status            : abap.char(10) not null;
+  lock_owner             : abap.char(40);
+  locked_at              : utclong;
+  lock_until             : utclong;
+  attempt_no             : abap.int4;
+  created_at             : utclong not null;
+  created_by             : abap.char(12) not null;
+}
+

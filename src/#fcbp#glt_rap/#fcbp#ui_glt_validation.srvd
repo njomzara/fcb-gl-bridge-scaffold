@@ -1,0 +1,6 @@
+@EndUserText.label: 'GL Transfer Validation Service'
+define service /fcbp/ui_glt_validation {
+  expose /fcbp/c_glt_validation      as ValidationRuns;
+  expose /fcbp/c_glt_validation_find as ValidationFindings;
+  expose /fcbp/i_glt_validation_rule as ValidationRules;
+}

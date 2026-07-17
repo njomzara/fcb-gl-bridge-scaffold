@@ -1,0 +1,32 @@
+"! /FCBP/GLT_SRCRUN - optional caller-owned source-read diagnostics.
+@EndUserText.label : 'GL Transfer Source Read Run'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_srcrun {
+  key client                 : abap.clnt not null;
+  key source_read_id         : abap.char(32) not null;
+  transfer_id                : abap.char(32);
+  package_id                 : abap.char(32);
+  source_type                : abap.char(20);
+  source_reference           : abap.char(50);
+  routing_bucket             : abap.char(32);
+  target_id                  : abap.char(20);
+  policy_context_id          : abap.char(32);
+  company_code               : abap.char(4);
+  read_mode                  : abap.char(20);
+  result_status              : abap.char(20);
+  read_consistency           : abap.char(20);
+  requested_by               : abap.char(12);
+  requested_at               : utclong;
+  completed_at               : utclong;
+  source_line_count          : abap.int4;
+  source_hash                : abap.char(64);
+  snapshot_id                : abap.char(64);
+  error_code                 : abap.char(30);
+  retryable                  : abap.char(1);
+  operator_text              : abap.char(220);
+  technical_reference        : abap.char(255);
+  created_at                 : utclong;
+}

@@ -1,0 +1,489 @@
+"! Package Builder orchestration service.
+CLASS /fcbp/cl_glt_package_preparer DEFINITION PUBLIC FINAL CREATE PUBLIC.
+
+  PUBLIC SECTION.
+    INTERFACES /fcbp/if_glt_package_preparer.
+
+    METHODS constructor
+      IMPORTING
+        io_transfer_repo TYPE REF TO /fcbp/if_glt_repository OPTIONAL
+        io_source_reader TYPE REF TO /fcbp/if_glt_source_reader OPTIONAL
+        io_id_factory    TYPE REF TO /fcbp/if_glt_package_id_factory OPTIONAL
+        io_builder       TYPE REF TO /fcbp/if_glt_package_builder OPTIONAL
+        io_package_repo  TYPE REF TO /fcbp/if_glt_package_repo OPTIONAL
+        io_lock          TYPE REF TO /fcbp/if_glt_package_lock OPTIONAL
+        io_status        TYPE REF TO /fcbp/if_glt_package_status OPTIONAL
+        io_consistency   TYPE REF TO /fcbp/cl_glt_package_consistency OPTIONAL.
+
+  PRIVATE SECTION.
+    DATA mo_transfer_repo TYPE REF TO /fcbp/if_glt_repository.
+    DATA mo_source_reader TYPE REF TO /fcbp/if_glt_source_reader.
+    DATA mo_id_factory TYPE REF TO /fcbp/if_glt_package_id_factory.
+    DATA mo_builder TYPE REF TO /fcbp/if_glt_package_builder.
+    DATA mo_package_repo TYPE REF TO /fcbp/if_glt_package_repo.
+    DATA mo_lock TYPE REF TO /fcbp/if_glt_package_lock.
+    DATA mo_status TYPE REF TO /fcbp/if_glt_package_status.
+    DATA mo_consistency TYPE REF TO /fcbp/cl_glt_package_consistency.
+
+    METHODS execute_prepare
+      IMPORTING
+        iv_transfer_id            TYPE /fcbp/if_glt_types=>ty_transfer_id
+        iv_build_mode             TYPE char20
+        iv_predecessor_package_id TYPE /fcbp/if_glt_pkg_types=>ty_package_id OPTIONAL
+        iv_reason_code            TYPE char30 OPTIONAL
+        is_effective_context      TYPE /fcbp/if_glt_config_types=>ty_effective_context
+        iv_outbox_id              TYPE /fcbp/if_glt_types=>ty_outbox_id OPTIONAL
+      RETURNING
+        VALUE(rs_result)          TYPE /fcbp/if_glt_aggr_types=>ty_package_build_result
+      RAISING
+        /fcbp/cx_glt_error.
+
+    METHODS validate_request
+      IMPORTING
+        iv_transfer_id            TYPE /fcbp/if_glt_types=>ty_transfer_id
+        iv_build_mode             TYPE char20
+        iv_predecessor_package_id TYPE /fcbp/if_glt_pkg_types=>ty_package_id OPTIONAL
+        iv_reason_code            TYPE char30 OPTIONAL
+        is_effective_context      TYPE /fcbp/if_glt_config_types=>ty_effective_context
+      RAISING
+        /fcbp/cx_glt_error.
+
+    METHODS validate_transfer
+      IMPORTING
+        is_transfer          TYPE /fcbp/if_glt_types=>ty_transfer
+        is_effective_context TYPE /fcbp/if_glt_config_types=>ty_effective_context
+      RAISING
+        /fcbp/cx_glt_error.
+
+    METHODS build_source_request
+      IMPORTING
+        is_transfer          TYPE /fcbp/if_glt_types=>ty_transfer
+        is_effective_context TYPE /fcbp/if_glt_config_types=>ty_effective_context
+        iv_package_id        TYPE /fcbp/if_glt_pkg_types=>ty_package_id
+        iv_build_mode        TYPE char20
+      RETURNING
+        VALUE(rs_request)    TYPE /fcbp/if_glt_src_types=>ty_source_read_request.
+
+    METHODS build_context
+      IMPORTING
+        is_transfer                 TYPE /fcbp/if_glt_types=>ty_transfer
+        is_effective_context        TYPE /fcbp/if_glt_config_types=>ty_effective_context
+        iv_package_id               TYPE /fcbp/if_glt_pkg_types=>ty_package_id
+        iv_predecessor_package_id   TYPE /fcbp/if_glt_pkg_types=>ty_package_id OPTIONAL
+        iv_reason_code              TYPE char30 OPTIONAL
+      RETURNING
+        VALUE(rs_context)           TYPE /fcbp/if_glt_pkg_types=>ty_package_build_context
+      RAISING
+        /fcbp/cx_glt_error.
+
+    METHODS source_reference
+      IMPORTING
+        is_transfer              TYPE /fcbp/if_glt_types=>ty_transfer
+      RETURNING
+        VALUE(rv_source_reference) TYPE char50.
+
+    METHODS append_consistency
+      CHANGING
+        cs_result TYPE /fcbp/if_glt_aggr_types=>ty_package_build_result.
+
+    METHODS raise_blocking
+      IMPORTING
+        it_message     TYPE /fcbp/if_glt_aggr_types=>tt_preparation_message
+        iv_transfer_id TYPE /fcbp/if_glt_types=>ty_transfer_id
+      RAISING
+        /fcbp/cx_glt_error.
+
+    METHODS release_lock_safely
+      IMPORTING
+        iv_transfer_id TYPE /fcbp/if_glt_types=>ty_transfer_id
+        iv_outbox_id   TYPE /fcbp/if_glt_types=>ty_outbox_id OPTIONAL
+        iv_build_mode  TYPE char20 OPTIONAL.
+
+ENDCLASS.
+
+CLASS /fcbp/cl_glt_package_preparer IMPLEMENTATION.
+
+  METHOD constructor.
+    IF io_transfer_repo IS BOUND.
+      mo_transfer_repo = io_transfer_repo.
+    ELSE.
+      mo_transfer_repo = NEW /fcbp/cl_glt_repository( ).
+    ENDIF.
+
+    IF io_source_reader IS BOUND.
+      mo_source_reader = io_source_reader.
+    ELSE.
+      mo_source_reader = NEW /fcbp/cl_glt_source_reader( ).
+    ENDIF.
+
+    IF io_id_factory IS BOUND.
+      mo_id_factory = io_id_factory.
+    ELSE.
+      mo_id_factory = NEW /fcbp/cl_glt_package_id_factory( ).
+    ENDIF.
+
+    IF io_builder IS BOUND.
+      mo_builder = io_builder.
+    ELSE.
+      mo_builder = NEW /fcbp/cl_glt_package_builder( ).
+    ENDIF.
+
+    IF io_package_repo IS BOUND.
+      mo_package_repo = io_package_repo.
+    ELSE.
+      mo_package_repo = NEW /fcbp/cl_glt_package_repo( ).
+    ENDIF.
+
+    IF io_lock IS BOUND.
+      mo_lock = io_lock.
+    ELSE.
+      mo_lock = NEW /fcbp/cl_glt_package_lock( ).
+    ENDIF.
+
+    IF io_status IS BOUND.
+      mo_status = io_status.
+    ELSE.
+      mo_status = NEW /fcbp/cl_glt_package_status( ).
+    ENDIF.
+
+    IF io_consistency IS BOUND.
+      mo_consistency = io_consistency.
+    ELSE.
+      mo_consistency = NEW /fcbp/cl_glt_package_consistency( ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD /fcbp/if_glt_package_preparer~prepare_for_dispatch.
+    rs_result = execute_prepare(
+      iv_transfer_id       = iv_transfer_id
+      iv_build_mode        = /fcbp/if_glt_pkg_prep_types=>c_build_mode-dispatch
+      is_effective_context = is_effective_context
+      iv_outbox_id         = iv_outbox_id ).
+  ENDMETHOD.
+
+  METHOD /fcbp/if_glt_package_preparer~rebuild_package.
+    rs_result = execute_prepare(
+      iv_transfer_id            = iv_transfer_id
+      iv_build_mode             = /fcbp/if_glt_pkg_prep_types=>c_build_mode-rebuild
+      iv_predecessor_package_id = iv_predecessor_package_id
+      iv_reason_code            = iv_reason_code
+      is_effective_context      = is_effective_context ).
+  ENDMETHOD.
+
+  METHOD execute_prepare.
+    validate_request(
+      iv_transfer_id            = iv_transfer_id
+      iv_build_mode             = iv_build_mode
+      iv_predecessor_package_id = iv_predecessor_package_id
+      iv_reason_code            = iv_reason_code
+      is_effective_context      = is_effective_context ).
+
+    DATA(ls_transfer) = mo_transfer_repo->read_transfer( iv_transfer_id ).
+    validate_transfer(
+      is_transfer          = ls_transfer
+      is_effective_context = is_effective_context ).
+
+    DATA(lv_locked) = mo_lock->acquire(
+      iv_transfer_id = iv_transfer_id
+      iv_outbox_id   = iv_outbox_id
+      iv_build_mode  = iv_build_mode ).
+    IF lv_locked <> abap_true.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+        EXPORTING
+          transfer_id    = iv_transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-lock
+          rule_id        = /fcbp/if_glt_pkg_prep_types=>c_rule_id-req_lock
+          operator_text  = 'Package preparation lock could not be acquired.'.
+    ENDIF.
+
+    TRY.
+        mo_status->preparation_started(
+          is_transfer   = ls_transfer
+          iv_outbox_id  = iv_outbox_id
+          iv_build_mode = iv_build_mode ).
+
+        DATA(lv_package_id) = mo_id_factory->create_package_id(
+          iv_transfer_id = iv_transfer_id
+          iv_build_mode  = iv_build_mode ).
+
+        DATA(ls_source_request) = build_source_request(
+          is_transfer          = ls_transfer
+          is_effective_context = is_effective_context
+          iv_package_id        = lv_package_id
+          iv_build_mode        = iv_build_mode ).
+
+        DATA(lt_source_line) = mo_source_reader->read_source_lines( ls_source_request ).
+
+        DATA(ls_context) = build_context(
+          is_transfer               = ls_transfer
+          is_effective_context      = is_effective_context
+          iv_package_id             = lv_package_id
+          iv_predecessor_package_id = iv_predecessor_package_id
+          iv_reason_code            = iv_reason_code ).
+
+        rs_result = mo_builder->build_package(
+          is_context           = ls_context
+          it_source_line       = lt_source_line
+          is_effective_context = is_effective_context ).
+
+        append_consistency( CHANGING cs_result = rs_result ).
+
+        IF rs_result-accepted <> abap_true
+           OR mo_consistency->has_blocking( rs_result-messages ) = abap_true.
+          rs_result-accepted = abap_false.
+          mo_status->preparation_blocked(
+            is_transfer   = ls_transfer
+            iv_package_id = lv_package_id
+            it_message    = rs_result-messages
+            iv_build_mode = iv_build_mode ).
+          mo_lock->release(
+            iv_transfer_id = iv_transfer_id
+            iv_outbox_id   = iv_outbox_id
+            iv_build_mode  = iv_build_mode ).
+          RETURN.
+        ENDIF.
+
+        mo_package_repo->persist_graph( rs_result-graph ).
+
+        DATA(lt_repo_message) = mo_package_repo->check_consistency( lv_package_id ).
+        APPEND LINES OF lt_repo_message TO rs_result-messages.
+        IF mo_consistency->has_blocking( lt_repo_message ) = abap_true.
+          rs_result-accepted = abap_false.
+          mo_status->preparation_blocked(
+            is_transfer   = ls_transfer
+            iv_package_id = lv_package_id
+            it_message    = rs_result-messages
+            iv_build_mode = iv_build_mode ).
+          mo_lock->release(
+            iv_transfer_id = iv_transfer_id
+            iv_outbox_id   = iv_outbox_id
+            iv_build_mode  = iv_build_mode ).
+          RETURN.
+        ENDIF.
+
+        mo_package_repo->publish_current(
+          iv_transfer_id = iv_transfer_id
+          iv_package_id  = lv_package_id ).
+
+        mo_status->preparation_succeeded(
+          is_transfer   = ls_transfer
+          iv_package_id = lv_package_id
+          it_message    = rs_result-messages
+          iv_build_mode = iv_build_mode ).
+
+        mo_lock->release(
+          iv_transfer_id = iv_transfer_id
+          iv_outbox_id   = iv_outbox_id
+          iv_build_mode  = iv_build_mode ).
+      CATCH /fcbp/cx_glt_error INTO DATA(lx_error).
+        release_lock_safely(
+          iv_transfer_id = iv_transfer_id
+          iv_outbox_id   = iv_outbox_id
+          iv_build_mode  = iv_build_mode ).
+        RAISE EXCEPTION lx_error.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD validate_request.
+    IF iv_transfer_id IS INITIAL.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+        EXPORTING
+          error_category = /fcbp/if_glt_types=>c_error_category-technical
+          rule_id        = /fcbp/if_glt_pkg_prep_types=>c_rule_id-req_transfer_id
+          operator_text  = 'Package preparation request is missing transfer id.'.
+    ENDIF.
+
+    CASE iv_build_mode.
+      WHEN /fcbp/if_glt_pkg_prep_types=>c_build_mode-dispatch
+        OR /fcbp/if_glt_pkg_prep_types=>c_build_mode-rebuild.
+      WHEN OTHERS.
+        RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+          EXPORTING
+            transfer_id    = iv_transfer_id
+            error_category = /fcbp/if_glt_types=>c_error_category-technical
+            rule_id        = /fcbp/if_glt_pkg_prep_types=>c_rule_id-req_build_mode
+            operator_text  = |Unsupported package build mode { iv_build_mode }.|.
+    ENDCASE.
+
+    IF is_effective_context-policy_context_id IS INITIAL.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+        EXPORTING
+          transfer_id       = iv_transfer_id
+          policy_context_id = is_effective_context-policy_context_id
+          error_category    = /fcbp/if_glt_types=>c_error_category-config
+          rule_id           = /fcbp/if_glt_pkg_prep_types=>c_rule_id-req_policy_context
+          operator_text     = 'Effective policy context id is required for package preparation.'.
+    ENDIF.
+
+    IF is_effective_context-target_profile-target_id IS INITIAL.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+        EXPORTING
+          transfer_id    = iv_transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-config
+          rule_id        = /fcbp/if_glt_pkg_prep_types=>c_rule_id-req_target_context
+          operator_text  = 'Effective target profile is required for package preparation.'.
+    ENDIF.
+
+    IF is_effective_context-aggregation_policy-aggregation_profile_id IS INITIAL
+       OR is_effective_context-split_policy-split_profile_id IS INITIAL.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+        EXPORTING
+          transfer_id    = iv_transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-config
+          rule_id        = /fcbp/if_glt_pkg_prep_types=>c_rule_id-pol_aggregation
+          operator_text  = 'Aggregation and split policies must be resolved before package preparation.'.
+    ENDIF.
+
+    IF is_effective_context-aggregation_policy-config_hash IS INITIAL
+       OR is_effective_context-split_policy-config_hash IS INITIAL.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+        EXPORTING
+          transfer_id    = iv_transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-config
+          rule_id        = /fcbp/if_glt_pkg_prep_types=>c_rule_id-pol_hash
+          operator_text  = 'Aggregation and split policy hashes must be present before package preparation.'.
+    ENDIF.
+
+    IF iv_build_mode = /fcbp/if_glt_pkg_prep_types=>c_build_mode-rebuild.
+      IF iv_predecessor_package_id IS INITIAL.
+        RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+          EXPORTING
+            transfer_id    = iv_transfer_id
+            error_category = /fcbp/if_glt_types=>c_error_category-technical
+            rule_id        = /fcbp/if_glt_pkg_prep_types=>c_rule_id-reb_predecessor
+            operator_text  = 'Rebuild request is missing predecessor package id.'.
+      ENDIF.
+      IF iv_reason_code IS INITIAL.
+        RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+          EXPORTING
+            transfer_id    = iv_transfer_id
+            error_category = /fcbp/if_glt_types=>c_error_category-technical
+            rule_id        = /fcbp/if_glt_pkg_prep_types=>c_rule_id-reb_reason
+            operator_text  = 'Rebuild request is missing reason code.'.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD validate_transfer.
+    IF is_transfer-header-transfer_id IS INITIAL.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+        EXPORTING
+          error_category = /fcbp/if_glt_types=>c_error_category-repository
+          rule_id        = /fcbp/if_glt_pkg_prep_types=>c_rule_id-req_transfer_exists
+          operator_text  = 'Transfer root was not found for package preparation.'.
+    ENDIF.
+
+    IF is_transfer-header-source_type IS INITIAL OR source_reference( is_transfer ) IS INITIAL.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+        EXPORTING
+          transfer_id      = is_transfer-header-transfer_id
+          error_category   = /fcbp/if_glt_types=>c_error_category-technical
+          rule_id          = /fcbp/if_glt_pkg_prep_types=>c_rule_id-req_source_scope
+          source_reference = source_reference( is_transfer )
+          operator_text    = 'Transfer source type/reference is required for package preparation.'.
+    ENDIF.
+
+    IF is_transfer-header-target_id IS NOT INITIAL
+       AND is_transfer-header-target_id <> is_effective_context-target_profile-target_id.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+        EXPORTING
+          transfer_id    = is_transfer-header-transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-config
+          rule_id        = /fcbp/if_glt_pkg_prep_types=>c_rule_id-req_target_context
+          operator_text  = 'Effective target profile does not match transfer target.'.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD build_source_request.
+    rs_request = VALUE #(
+      transfer_id       = is_transfer-header-transfer_id
+      package_id        = iv_package_id
+      source_type       = is_transfer-header-source_type
+      source_reference  = source_reference( is_transfer )
+      routing_bucket    = is_transfer-header-routing_bucket
+      target_id         = is_effective_context-target_profile-target_id
+      policy_context_id = is_effective_context-policy_context_id
+      read_mode         = iv_build_mode
+      requested_by      = sy-uname ).
+  ENDMETHOD.
+
+  METHOD build_context.
+    DATA(lv_version) = 1.
+    IF iv_predecessor_package_id IS NOT INITIAL.
+      DATA(ls_predecessor) = mo_package_repo->read_package( iv_predecessor_package_id ).
+      IF ls_predecessor-package_header-transfer_id <> is_transfer-header-transfer_id.
+        RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+          EXPORTING
+            transfer_id    = is_transfer-header-transfer_id
+            package_id     = iv_predecessor_package_id
+            error_category = /fcbp/if_glt_types=>c_error_category-conflict
+            rule_id        = /fcbp/if_glt_pkg_prep_types=>c_rule_id-reb_ownership
+            operator_text  = 'Predecessor package does not belong to the transfer being rebuilt.'.
+      ENDIF.
+      lv_version = ls_predecessor-package_header-package_version + 1.
+    ENDIF.
+
+    rs_context = VALUE #(
+      transfer_id            = is_transfer-header-transfer_id
+      package_id             = iv_package_id
+      predecessor_package_id = iv_predecessor_package_id
+      package_version        = lv_version
+      source_type            = is_transfer-header-source_type
+      source_reference       = source_reference( is_transfer )
+      target_id              = is_effective_context-target_profile-target_id
+      policy_context_id      = is_effective_context-policy_context_id
+      posting_date           = is_transfer-header-posting_date
+      document_date          = is_transfer-header-document_date
+      gl_doc_type            = is_effective_context-target_profile-transfer_type
+      ledger_group           = is_effective_context-target_profile-ledger_group
+      requested_by           = sy-uname
+      rebuild_reason         = iv_reason_code ).
+  ENDMETHOD.
+
+  METHOD source_reference.
+    rv_source_reference = is_transfer-header-source_ref_id.
+    IF rv_source_reference IS INITIAL AND is_transfer-header-reconciliation_key IS NOT INITIAL.
+      rv_source_reference = is_transfer-header-reconciliation_key.
+    ENDIF.
+    IF rv_source_reference IS INITIAL AND is_transfer-header-source_doc_no IS NOT INITIAL.
+      rv_source_reference = is_transfer-header-source_doc_no.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD append_consistency.
+    DATA(lt_message) = mo_consistency->check_graph( cs_result-graph ).
+    APPEND LINES OF lt_message TO cs_result-messages.
+    IF mo_consistency->has_blocking( lt_message ) = abap_true.
+      cs_result-accepted = abap_false.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD raise_blocking.
+    LOOP AT it_message INTO DATA(ls_message) WHERE blocking = abap_true.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation
+        EXPORTING
+          transfer_id     = iv_transfer_id
+          package_id      = ls_message-package_id
+          outdoc_id       = ls_message-outdoc_id
+          line_id         = ls_message-line_id
+          rule_id         = ls_message-rule_id
+          field_name      = ls_message-field_name
+          source_reference = ls_message-source_reference
+          error_category  = /fcbp/if_glt_types=>c_error_category-validation
+          operator_text   = ls_message-operator_text
+          technical_reference = ls_message-technical_ref.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD release_lock_safely.
+    TRY.
+        mo_lock->release(
+          iv_transfer_id = iv_transfer_id
+          iv_outbox_id   = iv_outbox_id
+          iv_build_mode  = iv_build_mode ).
+      CATCH /fcbp/cx_glt_error.
+        " Keep the original failure path when lock cleanup also fails.
+    ENDTRY.
+  ENDMETHOD.
+
+ENDCLASS.

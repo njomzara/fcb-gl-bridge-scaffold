@@ -1,0 +1,30 @@
+"! /FCBP/GLT_VALRUN - package validation run header evidence.
+@EndUserText.label : 'GL Transfer Validation Run'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_valrun {
+  key client                 : abap.clnt not null;
+  key validation_run_id      : abap.char(32) not null;
+  transfer_id                : abap.char(32) not null;
+  package_id                 : abap.char(32) not null;
+  policy_context_id          : abap.char(32);
+  validation_profile_id      : abap.char(20);
+  validation_profile_version : abap.int4;
+  validation_hash            : abap.char(64);
+  started_at                 : utclong;
+  ended_at                   : utclong;
+  result_status              : abap.char(20);
+  blocking_count             : abap.int4;
+  warning_count              : abap.int4;
+  actor_type                 : abap.char(12);
+  actor_id                   : abap.char(40);
+  jobrun_id                  : abap.char(32);
+  outbox_id                  : abap.char(32);
+  waiver_id                  : abap.char(32);
+  created_at                 : utclong;
+  created_by                 : abap.char(12);
+  changed_at                 : utclong;
+  changed_by                 : abap.char(12);
+}

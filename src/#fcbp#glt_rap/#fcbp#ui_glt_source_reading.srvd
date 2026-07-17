@@ -1,0 +1,5 @@
+@EndUserText.label: 'GL Transfer Source Reading Service'
+define service /fcbp/ui_glt_source_reading {
+  expose /fcbp/c_glt_source_read     as SourceReadDiagnostics;
+  expose /fcbp/i_glt_source_trace    as PackageSourceTrace;
+}

@@ -1,0 +1,9 @@
+@EndUserText.label: 'GL Transfer Source Reading DCL Baseline'
+@MappingRole: true
+define role /fcbp/dcl_glt_source_reading {
+  grant select on /fcbp/i_glt_source_read_run
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CC, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_source_read
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CC, BUKRS, ACTVT = '03' );
+}

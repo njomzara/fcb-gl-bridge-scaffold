@@ -1,0 +1,15 @@
+@EndUserText.label: 'GL Transfer Configuration Service'
+define service /fcbp/ui_glt_config {
+  expose /fcbp/c_glt_target_profile   as TargetProfiles;
+  expose /fcbp/c_glt_policy_admin     as PolicyAdministration;
+  expose /fcbp/i_glt_retry_policy     as RetryPolicies;
+  expose /fcbp/i_glt_aggr_policy      as AggregationPolicies;
+  expose /fcbp/i_glt_aggr_field       as AggregationFields;
+  expose /fcbp/i_glt_split_policy     as SplitPolicies;
+  expose /fcbp/i_glt_validation_rule  as ValidationRules;
+  expose /fcbp/i_glt_mapping_rule     as MappingRules;
+  expose /fcbp/i_glt_throttle_policy  as ThrottlePolicies;
+  expose /fcbp/i_glt_confirm_policy   as ConfirmationPolicies;
+  expose /fcbp/i_glt_policy_context   as RuntimePolicyContexts;
+  expose /fcbp/c_glt_policy_context_trace as PolicyContextTrace;
+}

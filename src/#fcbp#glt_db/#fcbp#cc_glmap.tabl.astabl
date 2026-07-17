@@ -1,0 +1,25 @@
+"! /FCBP/CC_GLMAP - source-to-target mapping rule configuration.
+@EndUserText.label : 'GL Transfer Mapping Rule'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #C
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/cc_glmap {
+  key client            : abap.clnt not null;
+  key mapping_policy_id : abap.char(20) not null;
+  key mapping_rule_id   : abap.char(30) not null;
+  key version           : abap.int4 not null;
+  active_flag           : abap.flag not null;
+  config_hash           : abap.char(64);
+  field_name            : abap.char(40);
+  source_value          : abap.char(80);
+  source_pattern        : abap.char(80);
+  target_value          : abap.char(80);
+  decision_type         : abap.char(20);
+  derivation_ref        : abap.char(80);
+  truncation_rule       : abap.char(30);
+  pass_through_allowed  : abap.flag;
+  priority              : abap.int4;
+  changed_by            : abap.char(12);
+  changed_at            : utclong;
+}

@@ -1,0 +1,28 @@
+"! /FCBP/GLT_SRC - source contribution trace for canonical lines.
+@EndUserText.label : 'GL Transfer Source Trace'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_src {
+  key client                 : abap.clnt not null;
+  key package_id             : abap.char(32) not null;
+  key outdoc_id              : abap.char(32) not null;
+  key line_id                : abap.char(32) not null;
+  key trace_id               : abap.char(32) not null;
+  line_no                    : abap.numc(6);
+  trace_sequence             : abap.int4;
+  source_type                : abap.char(20);
+  source_reference           : abap.char(50);
+  source_doc_no              : abap.char(20);
+  source_item_no             : abap.numc(6);
+  reconciliation_key         : abap.char(32);
+  company_code               : abap.char(4);
+  source_amount              : abap.dec(23,2);
+  source_currency            : abap.cuky;
+  source_hash                : abap.char(64);
+  contribution_ratio         : abap.dec(16,6);
+  contribution_amount        : abap.dec(23,2);
+  source_dimension_snapshot  : abap.char(255);
+  created_at                 : utclong;
+}

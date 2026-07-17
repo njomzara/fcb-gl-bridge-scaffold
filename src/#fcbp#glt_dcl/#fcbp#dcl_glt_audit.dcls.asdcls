@@ -1,0 +1,12 @@
+@EndUserText.label: 'GL Transfer Audit DCL Baseline'
+@MappingRole: true
+define role /fcbp/dcl_glt_audit {
+  grant select on /fcbp/c_glt_audit_log
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_AUD, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_support_audit
+    where TargetId = aspect pfcg_auth( FCBP_GLT_SUP, GLT_TGT, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_security_decision
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_SEC, BUKRS, ACTVT = '03' );
+}

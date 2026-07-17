@@ -1,0 +1,41 @@
+"! /FCBP/GLT_POLCTX - immutable runtime policy context evidence.
+@EndUserText.label : 'GL Transfer Policy Context'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_polctx {
+  key client              : abap.clnt not null;
+  key policy_context_id   : abap.char(32) not null;
+  transfer_id             : abap.char(32);
+  package_id              : abap.char(32);
+  outbox_id               : abap.char(32);
+  target_id               : abap.char(20) not null;
+  target_profile_version  : abap.int4 not null;
+  target_profile_hash     : abap.char(64) not null;
+  aggregation_profile_id  : abap.char(20);
+  aggregation_version     : abap.int4;
+  aggregation_hash        : abap.char(64);
+  split_profile_id        : abap.char(20);
+  split_version           : abap.int4;
+  split_hash              : abap.char(64);
+  validation_profile_id   : abap.char(20);
+  validation_version      : abap.int4;
+  validation_hash         : abap.char(64);
+  mapping_policy_id       : abap.char(20);
+  mapping_version         : abap.int4;
+  mapping_hash            : abap.char(64);
+  retry_policy_id         : abap.char(20);
+  retry_version           : abap.int4;
+  retry_hash              : abap.char(64);
+  throttle_policy_id      : abap.char(20);
+  throttle_version        : abap.int4;
+  throttle_hash           : abap.char(64);
+  confirmation_policy_id  : abap.char(20);
+  confirmation_version    : abap.int4;
+  confirmation_hash       : abap.char(64);
+  resolved_at             : utclong not null;
+  resolved_by             : abap.char(12) not null;
+  validity_from           : abap.dats;
+  validity_to             : abap.dats;
+}

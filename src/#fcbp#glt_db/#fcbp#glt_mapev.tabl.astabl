@@ -1,0 +1,31 @@
+"! /FCBP/GLT_MAPEV - append-only mapping event evidence.
+@EndUserText.label : 'GL Transfer Mapping Event'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_mapev {
+  key client             : abap.clnt not null;
+  key mapping_event_id   : abap.char(32) not null;
+  transfer_id            : abap.char(32) not null;
+  package_id             : abap.char(32) not null;
+  outdoc_id              : abap.char(32);
+  line_no                : abap.numc(6);
+  field_name             : abap.char(40);
+  source_value_hash      : abap.char(64);
+  source_value_safe      : abap.char(80);
+  target_value_hash      : abap.char(64);
+  target_value_safe      : abap.char(80);
+  target_id              : abap.char(20);
+  mapping_policy_id      : abap.char(20);
+  mapping_policy_version : abap.int4;
+  mapping_hash           : abap.char(64);
+  rule_id                : abap.char(30);
+  rule_version           : abap.int4;
+  decision_type          : abap.char(20);
+  result_status          : abap.char(20);
+  message_id             : abap.char(32);
+  operator_text          : abap.char(220);
+  created_at             : utclong;
+  created_by             : abap.char(12);
+}

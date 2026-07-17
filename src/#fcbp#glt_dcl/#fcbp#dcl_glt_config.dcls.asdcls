@@ -1,0 +1,42 @@
+@EndUserText.label: 'GL Transfer Configuration DCL Baseline'
+@MappingRole: true
+define role /fcbp/dcl_glt_config {
+  grant select on /fcbp/c_glt_target_profile
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CFG, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_policy_admin
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CFG, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_config_health
+    where TargetId = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_config_audit
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CFG, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_policy_context
+    where TargetId = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_retry_policy
+    where RetryPolicyId = aspect pfcg_auth( FCBP_GLT_CFG, GLT_POL, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_aggr_policy
+    where AggregationProfileId = aspect pfcg_auth( FCBP_GLT_CFG, GLT_POL, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_aggr_field
+    where AggregationProfileId = aspect pfcg_auth( FCBP_GLT_CFG, GLT_POL, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_split_policy
+    where SplitProfileId = aspect pfcg_auth( FCBP_GLT_CFG, GLT_POL, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_validation_rule
+    where ValidationProfileId = aspect pfcg_auth( FCBP_GLT_CFG, GLT_POL, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_mapping_rule
+    where MappingPolicyId = aspect pfcg_auth( FCBP_GLT_CFG, GLT_POL, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_throttle_policy
+    where ThrottlePolicyId = aspect pfcg_auth( FCBP_GLT_CFG, GLT_POL, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_confirm_policy
+    where ConfirmationPolicyId = aspect pfcg_auth( FCBP_GLT_CFG, GLT_POL, ACTVT = '03' );
+}

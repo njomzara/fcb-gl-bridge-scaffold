@@ -1,0 +1,25 @@
+"! /FCBP/GLT_TCWRK - outbox/work-item snapshot for a cockpit run.
+@EndUserText.label : 'GLT Test Cockpit Work Item'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_tcwrk {
+  key client             : abap.clnt not null;
+  key run_id             : abap.char(32) not null;
+  key outbox_id          : abap.char(32) not null;
+  transfer_id            : abap.char(32);
+  work_type              : abap.char(20);
+  processing_status      : abap.char(12);
+  lock_status            : abap.char(10);
+  priority               : abap.int4;
+  target_id              : abap.char(20);
+  processing_mode        : abap.char(10);
+  attempt_no             : abap.int4;
+  lock_owner             : abap.char(40);
+  due_at                 : utclong;
+  locked_at              : utclong;
+  lock_until             : utclong;
+  created_by             : abap.char(12);
+  created_at             : utclong;
+}

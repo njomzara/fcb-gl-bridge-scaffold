@@ -1,0 +1,21 @@
+@EndUserText.label: 'GL Transfer Package DCL Baseline'
+@MappingRole: true
+define role /fcbp/dcl_glt_package {
+  grant select on /fcbp/c_glt_package_detail
+    where TargetId = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_rebuild_compare
+    where TargetId = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_split_result
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CC, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_aggr_trace
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CC, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_canon_line
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CC, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_source_trace
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CC, BUKRS, ACTVT = '03' );
+}

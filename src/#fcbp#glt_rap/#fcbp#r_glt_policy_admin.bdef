@@ -1,0 +1,15 @@
+"! RAP behavior scaffold for policy-family administration and where-used checks.
+unmanaged implementation in class /fcbp/bp_glt_policy_admin unique;
+strict ( 2 );
+
+define behavior for /fcbp/c_glt_policy_admin alias PolicyAdmin
+lock master
+authorization master ( instance )
+{
+  field ( readonly ) ConfigObjectKey, ConfigObjectType, TargetId,
+                     CompanyCode, ActiveFlag, LifecycleState, HealthState,
+                     ConfigVersion, ConfigHash, ChangedBy, ChangedAt;
+
+  action checkHealth result [1] $self;
+  action displayUsageImpact result [1] $self;
+}

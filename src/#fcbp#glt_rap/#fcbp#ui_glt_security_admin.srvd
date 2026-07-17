@@ -1,0 +1,7 @@
+@EndUserText.label: 'GL Transfer Security Administration Service'
+define service /fcbp/ui_glt_security_admin {
+  expose /fcbp/c_glt_security_decision as SecurityDecisions;
+  expose /fcbp/c_glt_support_audit     as SupportAudit;
+  expose /fcbp/c_glt_provider_ops      as ProviderOperations;
+  expose /fcbp/c_glt_config_audit      as ConfigurationAudit;
+}

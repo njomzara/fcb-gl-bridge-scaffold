@@ -1,0 +1,7 @@
+@EndUserText.label: 'GL Transfer Audit Service'
+define service /fcbp/ui_glt_audit {
+  expose /fcbp/c_glt_audit_log         as AuditLog;
+  expose /fcbp/c_glt_support_audit     as SupportAudit;
+  expose /fcbp/c_glt_config_audit      as ConfigurationAudit;
+  expose /fcbp/c_glt_security_decision as SecurityDecisions;
+}

@@ -1,0 +1,20 @@
+"! /FCBP/GLT_IDEMP - idempotency key registry and request-hash conflict guard.
+@EndUserText.label : 'GL Transfer Idempotency'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_idemp {
+  key client             : abap.clnt not null;
+  key idempotency_key    : abap.char(64) not null;
+  transfer_type          : abap.char(20) not null;
+  source_system          : abap.char(30) not null;
+  request_hash           : abap.char(64) not null;
+  transfer_id            : abap.char(32);
+  reservation_status     : abap.char(12) not null;
+  reserved_by            : abap.char(12) not null;
+  reserved_at            : utclong not null;
+  expires_at             : utclong;
+  completed_at           : utclong;
+}
+

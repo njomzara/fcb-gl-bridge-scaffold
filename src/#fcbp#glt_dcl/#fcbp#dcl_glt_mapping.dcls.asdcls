@@ -1,0 +1,12 @@
+@EndUserText.label: 'GL Transfer Mapping DCL Baseline'
+@MappingRole: true
+define role /fcbp/dcl_glt_mapping {
+  grant select on /fcbp/c_glt_mapping
+    where TargetId = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_mapping_finding
+    where CompanyCode = aspect pfcg_auth( FCBP_GLT_CC, BUKRS, ACTVT = '03' );
+
+  grant select on /fcbp/i_glt_map_event
+    where MappingPolicyId = aspect pfcg_auth( FCBP_GLT_CFG, GLT_POL, ACTVT = '03' );
+}

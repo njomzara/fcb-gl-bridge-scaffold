@@ -1,0 +1,15 @@
+@EndUserText.label: 'GL Transfer Adapter DCL Baseline'
+@MappingRole: true
+define role /fcbp/dcl_glt_adapter {
+  grant select on /fcbp/c_glt_adapter_attempt
+    where TargetAdapter = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_target_reference
+    where TargetAdapter = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_unknown_confirm
+    where TargetAdapter = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+
+  grant select on /fcbp/c_glt_adapter_health
+    where TargetId = aspect pfcg_auth( FCBP_GLT_TGT, GLT_TGT, ACTVT = '03' );
+}

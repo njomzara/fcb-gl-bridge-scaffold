@@ -1,0 +1,34 @@
+"! /FCBP/GLT_LIN - canonical journal line after aggregation and split assignment.
+@EndUserText.label : 'GL Transfer Canonical Line'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_lin {
+  key client              : abap.clnt not null;
+  key package_id          : abap.char(32) not null;
+  key outdoc_id           : abap.char(32) not null;
+  key line_id             : abap.char(32) not null;
+  line_no                 : abap.numc(6) not null;
+  company_code            : abap.char(4);
+  gl_account              : abap.char(10);
+  debit_credit            : abap.char(1);
+  amount                  : abap.dec(23,2);
+  currency                : abap.cuky;
+  profit_center           : abap.char(10);
+  segment                 : abap.char(10);
+  cost_center             : abap.char(10);
+  internal_order          : abap.char(12);
+  trading_partner         : abap.char(10);
+  tax_code                : abap.char(2);
+  tax_report_date         : abap.dats;
+  posting_date            : abap.dats;
+  document_type           : abap.char(10);
+  ledger_group            : abap.char(10);
+  assignment              : abap.char(18);
+  item_text               : abap.char(50);
+  aggr_signature_hash     : abap.char(64);
+  source_count            : abap.int4;
+  line_hash               : abap.char(64);
+  created_at              : utclong;
+}

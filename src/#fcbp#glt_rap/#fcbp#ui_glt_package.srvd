@@ -1,0 +1,11 @@
+@EndUserText.label: 'GL Transfer Package Service'
+define service /fcbp/ui_glt_package {
+  expose /fcbp/c_glt_package_detail as Packages;
+  expose /fcbp/c_glt_split_result   as SplitResults;
+  expose /fcbp/c_glt_aggr_trace     as AggregationTrace;
+  expose /fcbp/c_glt_rebuild_compare as RebuildComparison;
+  expose /fcbp/c_glt_mapping        as MappingEvents;
+  expose /fcbp/c_glt_mapping_finding as MappingFindings;
+  expose /fcbp/i_glt_canon_line     as CanonicalLines;
+  expose /fcbp/i_glt_source_trace   as SourceTrace;
+}

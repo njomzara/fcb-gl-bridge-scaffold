@@ -1,0 +1,183 @@
+{
+  "_version": "1.59.0",
+  "sap.app": {
+    "id": "fcbp.glt.testcockpit",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "applicationVersion": {
+      "version": "0.1.0"
+    },
+    "dataSources": {
+      "mainService": {
+        "uri": "/sap/opu/odata4/fcbp/ui_glt_test_cockpit/srvd/fcbp/ui_glt_test_cockpit/0001/",
+        "type": "OData",
+        "settings": {
+          "odataVersion": "4.0",
+          "annotations": [
+            "localAnnotations"
+          ]
+        }
+      },
+      "localAnnotations": {
+        "type": "ODataAnnotation",
+        "uri": "annotations/annotation.xml",
+        "settings": {
+          "localUri": "annotations/annotation.xml"
+        }
+      }
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.124.0",
+      "libs": {
+        "sap.fe.templates": {},
+        "sap.fe.core": {},
+        "sap.ui.core": {},
+        "sap.m": {},
+        "sap.ui.table": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "fcbp.glt.testcockpit.i18n.i18n"
+        }
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      }
+    },
+    "routing": {
+      "routes": [
+        {
+          "pattern": ":?query:",
+          "name": "TestRunsList",
+          "target": "TestRunsList"
+        },
+        {
+          "pattern": "TestRuns({key}):?query:",
+          "name": "TestRunsObjectPage",
+          "target": "TestRunsObjectPage"
+        }
+      ],
+      "targets": {
+        "TestRunsList": {
+          "type": "Component",
+          "id": "TestRunsList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "TestRuns",
+              "variantManagement": "Page",
+              "initialLoad": "Enabled",
+              "navigation": {
+                "TestRuns": {
+                  "detail": {
+                    "route": "TestRunsObjectPage"
+                  }
+                }
+              },
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "GridTable",
+                    "selectionMode": "Single"
+                  },
+                  "actions": {
+                    "KickoffHappyPath": {
+                      "press": "fcbp.glt.testcockpit.ext.RunActions.kickoffHappyPath",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "text": "{i18n>kickoffHappyPath}"
+                    },
+                    "RefreshRun": {
+                      "press": "fcbp.glt.testcockpit.ext.RunActions.refreshRun",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": true,
+                      "text": "{i18n>refreshRun}"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "TestRunsObjectPage": {
+          "type": "Component",
+          "id": "TestRunsObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "TestRuns",
+              "sectionLayout": "Page",
+              "editableHeaderContent": false,
+              "controlConfiguration": {
+                "_SeededSource/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "ResponsiveTable"
+                  }
+                },
+                "_TransferItems/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "GridTable"
+                  }
+                },
+                "_WorkItems/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "GridTable"
+                  }
+                },
+                "_Timeline/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "GridTable"
+                  }
+                },
+                "_CanonicalLines/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "GridTable"
+                  }
+                },
+                "_MockTargetDocumentTree/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "TreeTable",
+                    "hierarchyQualifier": "/FCBP/H_GLT_TC_TGTNODE",
+                    "initialExpansionLevel": 1
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "sap.fiori": {
+    "registrationIds": [],
+    "archeType": "transactional"
+  }
+}

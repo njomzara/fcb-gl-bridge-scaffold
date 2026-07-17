@@ -1,0 +1,51 @@
+"! /FCBP/GLT_HDR - transfer root/current state.
+"! Replaces the older conceptual GLTITM root for the /FCBP/ Transfer Core design.
+@EndUserText.label : 'GL Transfer Header'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_hdr {
+  key client             : abap.clnt not null;
+  key transfer_id        : abap.char(32) not null;
+  transfer_type          : abap.char(20) not null;
+  source_system          : abap.char(30) not null;
+  source_type            : abap.char(20) not null;
+  source_ref_id          : abap.char(50) not null;
+  source_doc_no          : abap.char(20);
+  reconciliation_key     : abap.char(32);
+  bus_event_id           : abap.char(50);
+  bus_event_ver          : abap.numc(6);
+  source_registration_key : abap.char(64);
+  routing_bucket         : abap.char(32);
+  target_id              : abap.char(20);
+  processing_mode        : abap.char(10);
+  company_code           : abap.char(4) not null;
+  posting_date           : abap.dats not null;
+  document_date          : abap.dats not null;
+  currency               : abap.cuky not null;
+  total_debit_amt        : abap.dec(23,2);
+  total_credit_amt       : abap.dec(23,2);
+  external_corr_id       : abap.char(80);
+  correlation_id         : abap.char(64) not null;
+  idempotency_key        : abap.char(64) not null;
+  request_hash           : abap.char(64) not null;
+  status_code            : abap.char(24) not null;
+  external_status        : abap.char(10) not null;
+  internal_state         : abap.char(25);
+  retry_count            : abap.int4;
+  max_retry_count        : abap.int4;
+  last_error_id          : abap.char(32);
+  target_system          : abap.char(30);
+  target_adapter         : abap.char(30);
+  current_package_id     : abap.char(32);
+  confirmation_pending   : abap.flag;
+  operator_action_required : abap.flag;
+  lock_owner             : abap.char(40);
+  lock_until             : utclong;
+  created_by             : abap.char(12) not null;
+  created_at             : utclong not null;
+  changed_by             : abap.char(12) not null;
+  changed_at             : utclong not null;
+  version_no             : abap.int4 not null;
+}

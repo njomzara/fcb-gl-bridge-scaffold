@@ -1,0 +1,24 @@
+"! /FCBP/CC_GLSPLIT - outbound document split policy.
+@EndUserText.label : 'GL Transfer Split Policy'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #C
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/cc_glsplit {
+  key client             : abap.clnt not null;
+  key split_profile_id   : abap.char(20) not null;
+  key version            : abap.int4 not null;
+  active_flag            : abap.flag not null;
+  lifecycle_state        : abap.char(20);
+  config_hash            : abap.char(64);
+  max_lines_per_doc      : abap.int4;
+  max_amount             : abap.dec(23,2);
+  split_by_company_code  : abap.flag;
+  split_by_currency      : abap.flag;
+  split_by_posting_date  : abap.flag;
+  split_by_gl_doc_type   : abap.flag;
+  split_by_ledger_group  : abap.flag;
+  balance_scope          : abap.char(30);
+  changed_by             : abap.char(12);
+  changed_at             : utclong;
+}

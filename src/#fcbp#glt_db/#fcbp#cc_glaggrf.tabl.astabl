@@ -1,0 +1,18 @@
+"! /FCBP/CC_GLAGGRF - ordered aggregation field set.
+@EndUserText.label : 'GL Transfer Aggregation Field'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #C
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/cc_glaggrf {
+  key client                 : abap.clnt not null;
+  key aggregation_profile_id : abap.char(20) not null;
+  key version                : abap.int4 not null;
+  key field_sequence         : abap.int4 not null;
+  field_name                 : abap.char(40) not null;
+  required_flag              : abap.flag;
+  normalize_rule             : abap.char(30);
+  include_in_signature       : abap.flag;
+  changed_by                 : abap.char(12);
+  changed_at                 : utclong;
+}

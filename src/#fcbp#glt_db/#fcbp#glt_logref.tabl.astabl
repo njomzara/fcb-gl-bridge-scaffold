@@ -1,0 +1,18 @@
+"! /FCBP/GLT_LOGREF - application log handle references.
+@EndUserText.label : 'GL Transfer Log Reference'
+@AbapCatalog.enhancement.category : #NOT_EXTENSIBLE
+@AbapCatalog.tableCategory : #TRANSPARENT
+@AbapCatalog.deliveryClass : #A
+@AbapCatalog.dataMaintenance : #RESTRICTED
+define table /fcbp/glt_logref {
+  key client         : abap.clnt not null;
+  key logref_id      : abap.char(32) not null;
+  transfer_id        : abap.char(32);
+  error_id           : abap.char(32);
+  log_object         : abap.char(20) not null;
+  log_subobject      : abap.char(20) not null;
+  ext_log_handle     : abap.char(80);
+  created_at         : utclong not null;
+  created_by         : abap.char(12) not null;
+}
+

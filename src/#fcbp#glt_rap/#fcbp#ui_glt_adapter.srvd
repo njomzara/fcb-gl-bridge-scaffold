@@ -1,0 +1,7 @@
+@EndUserText.label: 'GL Transfer Adapter Service'
+define service /fcbp/ui_glt_adapter {
+  expose /fcbp/c_glt_adapter_attempt  as AdapterAttempts;
+  expose /fcbp/c_glt_target_reference as TargetReferences;
+  expose /fcbp/c_glt_unknown_confirm  as UnknownConfirmations;
+  expose /fcbp/c_glt_adapter_health   as AdapterHealth;
+}

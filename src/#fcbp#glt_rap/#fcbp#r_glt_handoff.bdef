@@ -1,0 +1,17 @@
+"! RAP behavior scaffold for Source Handoff registration monitor/recovery.
+managed implementation in class /fcbp/bp_glt_handoff unique;
+strict ( 2 );
+
+define behavior for /fcbp/c_glt_handoff alias Handoff
+persistent table /fcbp/glt_reg
+lock master
+authorization master ( instance )
+{
+  field ( readonly ) RegistrationKey, RegistrationStatus, SourceType,
+                     SourceReference, RoutingBucket, TargetId, ProcessingMode,
+                     TransferId, ReservedAt, CompletedAt, ExpiresAt;
+
+  action recoverRegistration result [1] $self;
+  action markRegistrationFailed result [1] $self;
+}
+
