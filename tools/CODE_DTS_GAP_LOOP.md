@@ -15,7 +15,10 @@ as its primary workspace and receives the DTS repository through `--add-dir`.
 
 ## Prerequisites
 
-- `codex` and `git` must be available in the shell.
+- The standalone Codex CLI must be installed through npm and available as
+  `codex.cmd`; the script deliberately avoids the desktop app's bundled
+  `codex.exe` on Windows.
+- `git` must be available in the shell.
 - Codex CLI authentication must already be configured.
 - Both repositories must be on named branches, not detached `HEAD`.
 - Both repositories must have completely clean working trees, including no

@@ -32,6 +32,14 @@ $DiscoveryResult = Join-Path $temporaryDirectory "fcbp-gap-discovery-$runId.json
 
 Set-Location -LiteralPath $ProjectRoot
 
+# On Windows, plain `codex` can resolve to the desktop app's protected bundled
+# executable. Prefer the standalone npm CLI shim installed in the user PATH.
+$CodexCommand = Get-Command codex.cmd -CommandType Application -ErrorAction SilentlyContinue
+if (-not $CodexCommand) {
+    throw "Standalone Codex CLI not found. Install it with: npm.cmd install --global @openai/codex@latest"
+}
+$CodexExecutable = $CodexCommand.Source
+
 foreach ($schemaPath in @(
     $StepSchema,
     $DiscoverySchema,
@@ -92,7 +100,7 @@ function Invoke-Codex {
 
     $arguments += @("--output-last-message", $OutputFile, $Prompt)
 
-    & codex @arguments
+    & $CodexExecutable @arguments
 
     if ($LASTEXITCODE -ne 0) {
         throw "Codex failed with exit code $LASTEXITCODE"
