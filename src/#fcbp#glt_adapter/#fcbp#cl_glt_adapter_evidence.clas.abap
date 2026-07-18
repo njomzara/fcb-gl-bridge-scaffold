@@ -5,6 +5,14 @@ CLASS /fcbp/cl_glt_adapter_evidence DEFINITION PUBLIC FINAL CREATE PUBLIC.
     INTERFACES /fcbp/if_glt_adapter_evidence.
 
   PRIVATE SECTION.
+    METHODS create_id
+      RETURNING
+        VALUE(rv_value) TYPE char32.
+
+    METHODS now
+      RETURNING
+        VALUE(rv_now) TYPE utclong.
+
     METHODS safe_key_hash
       IMPORTING
         iv_value       TYPE char64
@@ -17,7 +25,7 @@ CLASS /fcbp/cl_glt_adapter_evidence IMPLEMENTATION.
 
   METHOD /fcbp/if_glt_adapter_evidence~start_attempt.
     rs_attempt = VALUE #(
-      attempt_id            = |ATT-{ sy-datum }-{ sy-uzeit }|
+      attempt_id            = create_id( )
       transfer_id           = is_request-transfer_id
       outbox_id             = iv_outbox_id
       jobrun_id             = iv_jobrun_id
@@ -52,10 +60,37 @@ CLASS /fcbp/cl_glt_adapter_evidence IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD /fcbp/if_glt_adapter_evidence~persist_attempt.
-    RAISE EXCEPTION TYPE /fcbp/cx_glt_repository
-      EXPORTING
-        error_category = /fcbp/if_glt_types=>c_error_category-repository
-        operator_text  = 'Adapter attempt persistence must be bound to /FCBP/GLT_ATT in the target tenant.'.
+    DATA(ls_attempt) = is_attempt.
+    IF ls_attempt-attempt_id IS INITIAL.
+      ls_attempt-attempt_id = create_id( ).
+    ENDIF.
+    IF ls_attempt-started_at IS INITIAL.
+      ls_attempt-started_at = now( ).
+    ENDIF.
+    IF ls_attempt-created_by IS INITIAL.
+      ls_attempt-created_by = sy-uname.
+    ENDIF.
+
+    INSERT /fcbp/glt_att FROM @ls_attempt.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_repository
+        EXPORTING
+          transfer_id    = ls_attempt-transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-repository
+          operator_text  = |Adapter attempt { ls_attempt-attempt_id } could not be inserted.|.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD create_id.
+    TRY.
+        rv_value = cl_system_uuid=>create_uuid_c32_static( ).
+      CATCH cx_uuid_error.
+        rv_value = |ATT{ sy-datum }{ sy-uzeit }|.
+    ENDTRY.
+  ENDMETHOD.
+
+  METHOD now.
+    GET TIME STAMP FIELD rv_now.
   ENDMETHOD.
 
   METHOD safe_key_hash.

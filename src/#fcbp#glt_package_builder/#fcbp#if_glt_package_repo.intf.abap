@@ -1,4 +1,4 @@
-"! Persistence seam for complete package graph publication.
+"! Package Builder persistence seam for complete package graph publication.
 INTERFACE /fcbp/if_glt_package_repo PUBLIC.
 
   METHODS persist_graph
@@ -9,14 +9,24 @@ INTERFACE /fcbp/if_glt_package_repo PUBLIC.
 
   METHODS publish_current
     IMPORTING
-      iv_transfer_id TYPE /fcbp/if_glt_types=>ty_transfer_id
-      iv_package_id  TYPE /fcbp/if_glt_pkg_types=>ty_package_id
+      iv_transfer_id                 TYPE /fcbp/if_glt_types=>ty_transfer_id
+      iv_package_id                  TYPE /fcbp/if_glt_pkg_types=>ty_package_id
+      iv_lock_owner                  TYPE char40
+      iv_expected_current_package_id TYPE /fcbp/if_glt_pkg_types=>ty_package_id OPTIONAL
     RAISING
       /fcbp/cx_glt_repository.
 
   METHODS read_package
     IMPORTING
       iv_package_id TYPE /fcbp/if_glt_pkg_types=>ty_package_id
+    RETURNING
+      VALUE(rs_graph) TYPE /fcbp/if_glt_pkg_types=>ty_package_graph
+    RAISING
+      /fcbp/cx_glt_repository.
+
+  METHODS read_current_package
+    IMPORTING
+      iv_transfer_id TYPE /fcbp/if_glt_types=>ty_transfer_id
     RETURNING
       VALUE(rs_graph) TYPE /fcbp/if_glt_pkg_types=>ty_package_graph
     RAISING

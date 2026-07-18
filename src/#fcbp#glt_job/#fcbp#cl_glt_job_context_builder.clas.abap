@@ -172,6 +172,8 @@ CLASS /fcbp/cl_glt_job_context_builder IMPLEMENTATION.
           cs_context-work_type = /fcbp/if_glt_types=>c_outbox_work_type-poll.
         WHEN /fcbp/if_glt_job_types=>c_job_type-status_query.
           cs_context-work_type = /fcbp/if_glt_types=>c_outbox_work_type-status_query.
+        WHEN /fcbp/if_glt_job_types=>c_job_type-package_rebuild.
+          cs_context-work_type = /fcbp/if_glt_types=>c_outbox_work_type-rebuild.
         WHEN OTHERS.
           cs_context-work_type = /fcbp/if_glt_types=>c_outbox_work_type-dispatch.
       ENDCASE.

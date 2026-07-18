@@ -2,6 +2,7 @@
 
 Generated from:
 
+- Architecture baseline: `C:\Users\Minja\Documents\FCBP GL Connector\FCBP_GL_Bridge_Transfer_Proposed_Solution_Architecture_v0.1_First_Draft.docx`
 - `DTS/GL_Bridge_Transfer_Core_Layer_Technical_Specification.md`
 - `DTS/GL_Bridge_Source_Handoff_Layer_Technical_Specification.md`
 - `DTS/GL_Bridge_Monitoring_and_Status_Layer_Technical_Specification.md`
@@ -16,7 +17,6 @@ Generated from:
 - `DTS/GL_Bridge_Target_Routing_and_Policy_Resolution_Layer_Technical_Specification.md`
 - `DTS/GL_Bridge_Job_Layer_Technical_Specification.md`
 - `DTS/GL_Bridge_Outbox_Execution_Layer_Technical_Specification.md`
-- `docs/GL_BRIDGE_ARCHITECTURE.md`
 
 This scaffold is intentionally separate from `claude_scaffold`. The older scaffold uses
 `ZGLTR_*` POC naming; this one follows the transfer-core specification's target
@@ -40,12 +40,12 @@ abapGit.
 | --- | --- | --- |
 | `src/` | `/FCBP/GL_TRANSFER_CORE` | Root package metadata. |
 | `src/#fcbp#glt_handoff/` | `/FCBP/GLT_HANDOFF` | Source Handoff receiver, registration, routing, validation, and factory shells. |
-| `src/#fcbp#glt_core/` | `/FCBP/GLT_CORE` | Shared types, exceptions, contracts, and service-class shells. |
+| `src/#fcbp#glt_core/` | `/FCBP/GLT_CORE` | Shared transfer/package graph types, exceptions, contracts, and service-class shells. |
 | `src/#fcbp#glt_source_reading/` | `/FCBP/GLT_SOURCE_READING` | Source Reading contracts, source-type router, reconciliation/document/mock delegates, released-source repository seam, normalizer, hasher, and source-read exception. |
-| `src/#fcbp#glt_package_builder/` | `/FCBP/GLT_PACKAGE_BUILDER` | Package Builder orchestration contracts for package preparation/rebuild, package id generation, publication lock ownership, status/audit/message handoff, and graph consistency checks. |
+| `src/#fcbp#glt_package_builder/` | `/FCBP/GLT_PACKAGE_BUILDER` | Package Builder orchestration contracts, package graph repository, package preparation/rebuild, package id generation, publication ownership, status/audit/message handoff, and graph consistency checks. |
 | `src/#fcbp#glt_target_rtg_policy/` | `/FCBP/GLT_TARGET_RTG_POLICY` | Target Routing and Policy Resolution runtime hardening services: routing bucket derivation, effective-context hashing, request-local context cache, and route audit helper. |
 | `src/#fcbp#glt_config/` | `/FCBP/GLT_CONFIG` | Configuration Layer target-profile, policy, health, hash, policy-context, validation, migration, and admin-service seams. |
-| `src/#fcbp#glt_aggr_split/` | `/FCBP/GLT_AGGR_SPLIT` | Aggregation and Split Layer package builder, deterministic signature grouping, trace construction, split, balance-check, repository, and config-health seams. |
+| `src/#fcbp#glt_aggr_split/` | `/FCBP/GLT_AGGR_SPLIT` | Aggregation and Split Layer shaping services: deterministic signature grouping, trace construction, split, balance-check, and config-health seams. |
 | `src/#fcbp#glt_validation/` | `/FCBP/GLT_VALIDATION` | Validation Layer request-gate extension seams, package-level validator, rule evaluator, finding/result services, evidence reader, repository, and validation-profile health checks. |
 | `src/#fcbp#glt_mapping/` | `/FCBP/GLT_MAPPING` | Mapping Layer target-normalization contracts, package/journal mapper, deterministic resolver, field decision helper, event builder, repository, exception, and mapping-rule health checks. |
 | `src/#fcbp#glt_monitor/` | `/FCBP/GLT_MONITOR` | Monitoring and Status services for messages, references, rollups, queries, and guarded operator actions. |
@@ -84,7 +84,7 @@ abapGit.
 - Route simulation and policy-context consistency jobs are diagnostic only; normal retry of prepared/submitted packages must reuse existing policy context rather than silently re-resolving current configuration.
 - Package Builder has two roles: `/FCBP/IF_GLT_PACKAGE_BUILDER` remains the deterministic, side-effect-free graph builder; `/FCBP/IF_GLT_PACKAGE_PREPARER` owns transfer-context preparation/rebuild orchestration.
 - Package Preparer coordinates Source Reading, package id creation, graph build, graph consistency checks, repository persistence, current-package publication, and status/message/audit handoff through injected seams.
-- Package graph persistence remains owned by `/FCBP/IF_GLT_PACKAGE_REPO`; `/FCBP/CL_GLT_PACKAGE_REPO` still fails closed until it is bound to `/FCBP/GLT_PKG`, `/FCBP/GLT_DOC`, `/FCBP/GLT_LIN`, and `/FCBP/GLT_SRC`.
+- Package graph persistence is owned by `/FCBP/IF_GLT_PACKAGE_REPO`; `/FCBP/CL_GLT_PACKAGE_REPO` provides the table-backed scaffold for `/FCBP/GLT_PKG`, `/FCBP/GLT_DOC`, `/FCBP/GLT_LIN`, and `/FCBP/GLT_SRC`.
 - Package Builder must not call adapters, construct target-specific payloads, schedule retry/poll work, read unreleased FCBP source tables, or directly own Validation/Mapping outcomes.
 - Rebuilds create successor package evidence and publish only after source read, graph build, consistency, and persistence succeed; predecessor package content remains immutable.
 - Monitoring and Status owns the cockpit read model, append-only timeline drilldown, and guarded actions for retry/rebuild/cancel/query.
@@ -153,7 +153,7 @@ The files are ABAP Cloud-shaped scaffolds. Tenant-specific work remains before a
 - Bind Target Routing and Policy Resolution to a productive `/FCBP/CL_GLT_CONFIG_REPO` implementation for `/FCBP/CC_GLTGT`, policy-family tables, and `/FCBP/GLT_POLCTX`.
 - Replace scaffold compact hashes in `/FCBP/CL_GLT_EFFECTIVE_CTX_HASH` and `/FCBP/CL_GLT_ROUTING_BUCKET` with approved canonical serialization/hash rules once the platform hash service is selected.
 - Bind `/FCBP/CL_GLT_PACKAGE_PREPARER` to the final Transfer Core work handler, effective-context resolver, message/status/audit services, and the package repository implementation.
-- Implement `/FCBP/CL_GLT_PACKAGE_REPO` persistence/publication so graph rows are inserted atomically and one current package per transfer is enforced.
+- Harden `/FCBP/CL_GLT_PACKAGE_REPO` persistence/publication with final lock/current-pointer ownership, rollback policy, and one-current-package-per-transfer enforcement.
 - Bind validation run/finding persistence to `/FCBP/GLT_VALRUN` and `/FCBP/GLT_VALFND`, and decide whether validation pass/fail is derived from latest run evidence or also stamped onto package/transfer headers.
 - Bind mapping evidence persistence to `/FCBP/GLT_MAPEV`, finalize mapped-journal handoff to Adapter payload builders, and decide whether explicit `MAPPED` / `MAPPING_FAILED` statuses should be added to the Transfer Core status vocabulary.
 - Bind `/FCBP/IF_GLT_OUTBOX_DISPATCHER` to the future Outbox Execution implementation so dispatch/retry/poll/status-query jobs do not duplicate claim loops.

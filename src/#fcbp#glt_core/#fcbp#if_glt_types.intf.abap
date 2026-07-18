@@ -126,7 +126,6 @@ INTERFACE /fcbp/if_glt_types PUBLIC.
       rebuild      TYPE char20 VALUE 'REBUILD',
       poll         TYPE char20 VALUE 'POLL',
       status_query TYPE char20 VALUE 'STATUS_QUERY',
-      reprocess    TYPE char20 VALUE 'REPROCESS',
     END OF c_outbox_work_type.
 
   CONSTANTS:

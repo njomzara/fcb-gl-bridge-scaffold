@@ -64,6 +64,43 @@ CLASS /fcbp/cl_glt_package_preparer DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING
         VALUE(rs_request)    TYPE /fcbp/if_glt_src_types=>ty_source_read_request.
 
+    METHODS read_current_candidate
+      IMPORTING
+        is_transfer           TYPE /fcbp/if_glt_types=>ty_transfer
+      RETURNING
+        VALUE(rs_graph)       TYPE /fcbp/if_glt_pkg_types=>ty_package_graph
+      RAISING
+        /fcbp/cx_glt_error.
+
+    METHODS current_package_reusable
+      IMPORTING
+        is_graph             TYPE /fcbp/if_glt_pkg_types=>ty_package_graph
+        is_transfer          TYPE /fcbp/if_glt_types=>ty_transfer
+        is_effective_context TYPE /fcbp/if_glt_config_types=>ty_effective_context
+        iv_source_hash       TYPE char64
+      RETURNING
+        VALUE(rv_reusable)   TYPE abap_bool.
+
+    METHODS calculate_source_hash
+      IMPORTING
+        it_source_line        TYPE /fcbp/if_glt_pkg_types=>tt_source_gl_line
+      RETURNING
+        VALUE(rv_source_hash) TYPE char64.
+
+    METHODS compact_hash
+      IMPORTING
+        iv_input              TYPE string
+      RETURNING
+        VALUE(rv_hash)        TYPE char64.
+
+    METHODS append_reuse_blocking
+      IMPORTING
+        is_graph         TYPE /fcbp/if_glt_pkg_types=>ty_package_graph
+        iv_rule_id       TYPE char30
+        iv_operator_text TYPE char220
+      CHANGING
+        ct_message       TYPE /fcbp/if_glt_aggr_types=>tt_preparation_message.
+
     METHODS build_context
       IMPORTING
         is_transfer                 TYPE /fcbp/if_glt_types=>ty_transfer
@@ -98,6 +135,13 @@ CLASS /fcbp/cl_glt_package_preparer DEFINITION PUBLIC FINAL CREATE PUBLIC.
         iv_transfer_id TYPE /fcbp/if_glt_types=>ty_transfer_id
         iv_outbox_id   TYPE /fcbp/if_glt_types=>ty_outbox_id OPTIONAL
         iv_build_mode  TYPE char20 OPTIONAL.
+
+    METHODS lock_owner
+      IMPORTING
+        iv_transfer_id          TYPE /fcbp/if_glt_types=>ty_transfer_id
+        iv_outbox_id            TYPE /fcbp/if_glt_types=>ty_outbox_id OPTIONAL
+      RETURNING
+        VALUE(rv_owner)         TYPE char40.
 
 ENDCLASS.
 
@@ -197,14 +241,29 @@ CLASS /fcbp/cl_glt_package_preparer IMPLEMENTATION.
     ENDIF.
 
     TRY.
+        ls_transfer = mo_transfer_repo->read_transfer( iv_transfer_id ).
+        validate_transfer(
+          is_transfer          = ls_transfer
+          is_effective_context = is_effective_context ).
+
+        DATA(lv_lock_owner) = lock_owner(
+          iv_transfer_id = iv_transfer_id
+          iv_outbox_id   = iv_outbox_id ).
+        DATA(lv_expected_current_package_id) = COND /fcbp/if_glt_pkg_types=>ty_package_id(
+          WHEN iv_predecessor_package_id IS NOT INITIAL THEN iv_predecessor_package_id
+          ELSE ls_transfer-header-current_package_id ).
+
         mo_status->preparation_started(
           is_transfer   = ls_transfer
           iv_outbox_id  = iv_outbox_id
           iv_build_mode = iv_build_mode ).
 
-        DATA(lv_package_id) = mo_id_factory->create_package_id(
-          iv_transfer_id = iv_transfer_id
-          iv_build_mode  = iv_build_mode ).
+        DATA(lv_package_id) = COND /fcbp/if_glt_pkg_types=>ty_package_id(
+          WHEN iv_build_mode = /fcbp/if_glt_pkg_prep_types=>c_build_mode-dispatch
+          THEN ls_transfer-header-current_package_id
+          ELSE mo_id_factory->create_package_id(
+                 iv_transfer_id = iv_transfer_id
+                 iv_build_mode  = iv_build_mode ) ).
 
         DATA(ls_source_request) = build_source_request(
           is_transfer          = ls_transfer
@@ -213,6 +272,89 @@ CLASS /fcbp/cl_glt_package_preparer IMPLEMENTATION.
           iv_build_mode        = iv_build_mode ).
 
         DATA(lt_source_line) = mo_source_reader->read_source_lines( ls_source_request ).
+
+        IF iv_build_mode = /fcbp/if_glt_pkg_prep_types=>c_build_mode-dispatch.
+          DATA(ls_current_graph) = read_current_candidate( ls_transfer ).
+          IF ls_current_graph-package_header-package_id IS NOT INITIAL.
+            DATA(lt_current_message) = mo_package_repo->check_consistency( ls_current_graph-package_header-package_id ).
+            IF mo_consistency->has_blocking( lt_current_message ) = abap_true.
+              rs_result = VALUE #(
+                graph            = ls_current_graph
+                messages         = lt_current_message
+                accepted         = abap_false
+                reusable_package = abap_false
+                package_hash     = ls_current_graph-package_header-payload_hash ).
+              mo_status->preparation_blocked(
+                is_transfer   = ls_transfer
+                iv_package_id = ls_current_graph-package_header-package_id
+                it_message    = rs_result-messages
+                iv_build_mode = iv_build_mode ).
+              mo_lock->release(
+                iv_transfer_id = iv_transfer_id
+                iv_outbox_id   = iv_outbox_id
+                iv_build_mode  = iv_build_mode ).
+              RETURN.
+            ENDIF.
+
+            DATA(lv_source_hash) = calculate_source_hash( lt_source_line ).
+            IF current_package_reusable(
+                 is_graph             = ls_current_graph
+                 is_transfer          = ls_transfer
+                 is_effective_context = is_effective_context
+                 iv_source_hash       = lv_source_hash ) = abap_true.
+              rs_result = VALUE #(
+                graph            = ls_current_graph
+                messages         = lt_current_message
+                accepted         = abap_true
+                reusable_package = abap_true
+                package_hash     = ls_current_graph-package_header-payload_hash ).
+              mo_package_repo->publish_current(
+                iv_transfer_id                 = iv_transfer_id
+                iv_package_id                  = ls_current_graph-package_header-package_id
+                iv_expected_current_package_id = ls_current_graph-package_header-package_id
+                iv_lock_owner                  = lv_lock_owner ).
+              mo_status->preparation_succeeded(
+                is_transfer   = ls_transfer
+                iv_package_id = ls_current_graph-package_header-package_id
+                it_message    = rs_result-messages
+                iv_build_mode = iv_build_mode ).
+              mo_lock->release(
+                iv_transfer_id = iv_transfer_id
+                iv_outbox_id   = iv_outbox_id
+                iv_build_mode  = iv_build_mode ).
+              RETURN.
+            ENDIF.
+
+            DATA(lt_reuse_message) = lt_current_message.
+            append_reuse_blocking(
+              EXPORTING
+                is_graph         = ls_current_graph
+                iv_rule_id       = 'PKG_REUSE_MISMATCH'
+                iv_operator_text = 'Current package evidence no longer matches source or package-shaping policy; request rebuild instead of dispatch.'
+              CHANGING
+                ct_message       = lt_reuse_message ).
+            rs_result = VALUE #(
+              graph            = ls_current_graph
+              messages         = lt_reuse_message
+              accepted         = abap_false
+              reusable_package = abap_false
+              package_hash     = ls_current_graph-package_header-payload_hash ).
+            mo_status->preparation_blocked(
+              is_transfer   = ls_transfer
+              iv_package_id = ls_current_graph-package_header-package_id
+              it_message    = rs_result-messages
+              iv_build_mode = iv_build_mode ).
+            mo_lock->release(
+              iv_transfer_id = iv_transfer_id
+              iv_outbox_id   = iv_outbox_id
+              iv_build_mode  = iv_build_mode ).
+            RETURN.
+          ENDIF.
+
+          lv_package_id = mo_id_factory->create_package_id(
+            iv_transfer_id = iv_transfer_id
+            iv_build_mode  = iv_build_mode ).
+        ENDIF.
 
         DATA(ls_context) = build_context(
           is_transfer               = ls_transfer
@@ -262,8 +404,10 @@ CLASS /fcbp/cl_glt_package_preparer IMPLEMENTATION.
         ENDIF.
 
         mo_package_repo->publish_current(
-          iv_transfer_id = iv_transfer_id
-          iv_package_id  = lv_package_id ).
+          iv_transfer_id                 = iv_transfer_id
+          iv_package_id                  = lv_package_id
+          iv_expected_current_package_id = lv_expected_current_package_id
+          iv_lock_owner                  = lv_lock_owner ).
 
         mo_status->preparation_succeeded(
           is_transfer   = ls_transfer
@@ -407,6 +551,65 @@ CLASS /fcbp/cl_glt_package_preparer IMPLEMENTATION.
       requested_by      = sy-uname ).
   ENDMETHOD.
 
+  METHOD read_current_candidate.
+    IF is_transfer-header-current_package_id IS NOT INITIAL.
+      rs_graph = mo_package_repo->read_package( is_transfer-header-current_package_id ).
+      RETURN.
+    ENDIF.
+
+    rs_graph = mo_package_repo->read_current_package( is_transfer-header-transfer_id ).
+  ENDMETHOD.
+
+  METHOD current_package_reusable.
+    DATA(ls_header) = is_graph-package_header.
+    DATA(lv_is_current) = xsdbool(
+      ls_header-current_flag = abap_true OR
+      ls_header-package_id = is_transfer-header-current_package_id ).
+
+    rv_reusable = xsdbool(
+      lv_is_current = abap_true AND
+      ( ls_header-package_status = /fcbp/if_glt_pkg_types=>c_package_status-current OR
+        ls_header-package_status = /fcbp/if_glt_pkg_types=>c_package_status-prepared ) AND
+      ls_header-transfer_id = is_transfer-header-transfer_id AND
+      ls_header-source_type = is_transfer-header-source_type AND
+      ls_header-source_reference = source_reference( is_transfer ) AND
+      ls_header-target_id = is_effective_context-target_profile-target_id AND
+      ls_header-aggregation_profile_id = is_effective_context-aggregation_policy-aggregation_profile_id AND
+      ls_header-aggregation_version = is_effective_context-aggregation_policy-version AND
+      ls_header-aggregation_hash = is_effective_context-aggregation_policy-config_hash AND
+      ls_header-split_profile_id = is_effective_context-split_policy-split_profile_id AND
+      ls_header-split_version = is_effective_context-split_policy-version AND
+      ls_header-split_hash = is_effective_context-split_policy-config_hash AND
+      ls_header-source_hash IS NOT INITIAL AND
+      ls_header-source_hash = iv_source_hash ).
+  ENDMETHOD.
+
+  METHOD calculate_source_hash.
+    DATA(lt_source) = it_source_line.
+    SORT lt_source BY source_type source_reference source_doc_no source_item_no source_hash.
+
+    LOOP AT lt_source INTO DATA(ls_source).
+      rv_source_hash = compact_hash( |SRC:{ rv_source_hash }:{ ls_source-source_hash }| ).
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD compact_hash.
+    DATA(lv_len) = strlen( iv_input ).
+    DATA(lv_take) = COND i( WHEN lv_len < 24 THEN lv_len ELSE 24 ).
+    rv_hash = |AGG-{ lv_len }-{ iv_input(lv_take) }|.
+  ENDMETHOD.
+
+  METHOD append_reuse_blocking.
+    APPEND VALUE #(
+      rule_id          = iv_rule_id
+      category         = /fcbp/if_glt_aggr_types=>c_prep_category-technical
+      severity         = /fcbp/if_glt_types=>c_severity-error
+      blocking         = abap_true
+      package_id       = is_graph-package_header-package_id
+      source_reference = is_graph-package_header-source_reference
+      operator_text    = iv_operator_text ) TO ct_message.
+  ENDMETHOD.
+
   METHOD build_context.
     DATA(lv_version) = 1.
     IF iv_predecessor_package_id IS NOT INITIAL.
@@ -484,6 +687,12 @@ CLASS /fcbp/cl_glt_package_preparer IMPLEMENTATION.
       CATCH /fcbp/cx_glt_error.
         " Keep the original failure path when lock cleanup also fails.
     ENDTRY.
+  ENDMETHOD.
+
+  METHOD lock_owner.
+    rv_owner = COND #(
+      WHEN iv_outbox_id IS NOT INITIAL THEN |PKG:{ iv_outbox_id }|
+      ELSE |PKG:{ iv_transfer_id }| ).
   ENDMETHOD.
 
 ENDCLASS.

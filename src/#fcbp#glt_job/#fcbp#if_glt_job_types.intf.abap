@@ -133,6 +133,7 @@ INTERFACE /fcbp/if_glt_job_types PUBLIC.
            max_runtime_seconds TYPE i,
            priority_max        TYPE i,
            dry_run             TYPE abap_bool,
+           immediate_dispatch  TYPE abap_bool,
            actor_id            TYPE char40,
            correlation_id      TYPE /fcbp/if_glt_types=>ty_correlation_id,
          END OF ty_dispatch_context.

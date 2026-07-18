@@ -194,7 +194,7 @@ CLASS /fcbp/cl_glt_mapper IMPLEMENTATION.
     ENDIF.
     IF ls_context-mapping_rules IS INITIAL.
       ls_context-mapping_rules = mo_config_repo->read_mapping_rules(
-        iv_profile_id = ls_context-mapping_policy_id
+        iv_policy_id = ls_context-mapping_policy_id
         iv_version    = ls_context-mapping_version ).
     ENDIF.
 
@@ -369,7 +369,7 @@ CLASS /fcbp/cl_glt_mapper IMPLEMENTATION.
     IF rt_rule IS INITIAL AND mo_config_repo IS BOUND AND is_context-mapping_policy_id IS NOT INITIAL.
       TRY.
           rt_rule = mo_config_repo->read_mapping_rules(
-            iv_profile_id = is_context-mapping_policy_id
+            iv_policy_id = is_context-mapping_policy_id
             iv_version    = is_context-mapping_version ).
         CATCH /fcbp/cx_glt_config INTO DATA(lx_config).
           RAISE EXCEPTION TYPE /fcbp/cx_glt_mapping

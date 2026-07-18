@@ -79,6 +79,7 @@ CLASS /fcbp/cl_glt_job_runner IMPLEMENTATION.
       max_runtime_seconds = is_context-max_runtime_seconds
       priority_max        = is_context-priority_max
       dry_run             = is_context-dry_run
+      immediate_dispatch  = is_context-immediate_dispatch
       actor_id            = is_context-actor_id
       correlation_id      = is_context-correlation_id ).
   ENDMETHOD.

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Code-vs-DTS gap step result",
+  "type": "object",
+  "properties": {
+    "done": {
+      "type": "boolean",
+      "description": "True when no unresolved gaps remain."
+    },
+    "gap_id": {
+      "type": ["string", "null"],
+      "description": "The stable gap identifier handled in this step, or null when done."
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "code_updated",
+        "dts_updated",
+        "both_updated",
+        "not_a_gap",
+        "needs_human",
+        "no_gaps_remaining"
+      ]
+    },
+    "summary": {
+      "type": "string"
+    },
+    "validation_passed": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "done",
+    "gap_id",
+    "outcome",
+    "summary",
+    "validation_passed"
+  ],
+  "additionalProperties": false
+}

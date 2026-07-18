@@ -493,25 +493,85 @@ CLASS /fcbp/cl_glt_tst_repo IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD /fcbp/if_glt_package_repo~publish_current.
+    DATA(lv_transfer_index) = find_transfer( iv_transfer_id ).
+    IF lv_transfer_index = 0.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_repository
+        EXPORTING
+          transfer_id    = iv_transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-repository
+          operator_text  = |Transfer { iv_transfer_id } was not found for package publication.|.
+    ENDIF.
+
+    READ TABLE mo_store->mt_transfer ASSIGNING FIELD-SYMBOL(<ls_transfer>) INDEX lv_transfer_index.
+    IF <ls_transfer>-header-current_package_id IS NOT INITIAL
+       AND <ls_transfer>-header-current_package_id <> iv_expected_current_package_id
+       AND <ls_transfer>-header-current_package_id <> iv_package_id.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_repository
+        EXPORTING
+          transfer_id    = iv_transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-conflict
+          operator_text  = |Transfer current package changed from expected { iv_expected_current_package_id } to { <ls_transfer>-header-current_package_id }.|.
+    ENDIF.
+
+    READ TABLE mo_store->mt_package ASSIGNING FIELD-SYMBOL(<ls_target_graph>)
+      WITH KEY package_header-package_id = iv_package_id.
+    IF sy-subrc <> 0.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_repository
+        EXPORTING
+          transfer_id    = iv_transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-repository
+          operator_text  = |Package { iv_package_id } does not belong to transfer { iv_transfer_id }.|.
+    ENDIF.
+
+    IF <ls_target_graph>-package_header-transfer_id <> iv_transfer_id.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_repository
+        EXPORTING
+          transfer_id    = iv_transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-repository
+          operator_text  = |Package { iv_package_id } does not belong to transfer { iv_transfer_id }.|.
+    ENDIF.
+
+    IF <ls_target_graph>-package_header-package_id <> iv_expected_current_package_id
+       AND <ls_target_graph>-package_header-predecessor_package_id IS NOT INITIAL
+       AND <ls_target_graph>-package_header-predecessor_package_id <> iv_expected_current_package_id.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_repository
+        EXPORTING
+          transfer_id    = iv_transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-conflict
+          operator_text  = |Package { iv_package_id } does not follow expected predecessor { iv_expected_current_package_id }.|.
+    ENDIF.
+
     LOOP AT mo_store->mt_package ASSIGNING FIELD-SYMBOL(<ls_graph>)
       WHERE package_header-transfer_id = iv_transfer_id.
       <ls_graph>-package_header-current_flag = abap_false.
+      IF <ls_graph>-package_header-package_id <> iv_package_id.
+        <ls_graph>-package_header-package_status = /fcbp/if_glt_pkg_types=>c_package_status-superseded.
+        <ls_graph>-package_header-superseded_by_package_id = iv_package_id.
+      ENDIF.
       IF <ls_graph>-package_header-package_id = iv_package_id.
         <ls_graph>-package_header-current_flag = abap_true.
         <ls_graph>-package_header-package_status = /fcbp/if_glt_pkg_types=>c_package_status-current.
+        CLEAR <ls_graph>-package_header-superseded_by_package_id.
       ENDIF.
     ENDLOOP.
 
-    DATA(lv_index) = find_transfer( iv_transfer_id ).
-    IF lv_index > 0.
-      READ TABLE mo_store->mt_transfer ASSIGNING FIELD-SYMBOL(<ls_transfer>) INDEX lv_index.
-      <ls_transfer>-header-current_package_id = iv_package_id.
-    ENDIF.
+    <ls_transfer>-header-current_package_id = iv_package_id.
   ENDMETHOD.
 
   METHOD /fcbp/if_glt_package_repo~read_package.
     READ TABLE mo_store->mt_package INTO rs_graph
       WITH KEY package_header-package_id = iv_package_id.
+  ENDMETHOD.
+
+  METHOD /fcbp/if_glt_package_repo~read_current_package.
+    LOOP AT mo_store->mt_package INTO DATA(ls_graph)
+      WHERE package_header-transfer_id = iv_transfer_id
+        AND package_header-current_flag = abap_true.
+      IF rs_graph-package_header-package_id IS INITIAL OR
+         ls_graph-package_header-package_version > rs_graph-package_header-package_version.
+        rs_graph = ls_graph.
+      ENDIF.
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD /fcbp/if_glt_package_repo~check_consistency.

@@ -50,6 +50,14 @@ CLASS /fcbp/cl_glt_action_service DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RAISING
         /fcbp/cx_glt_error.
 
+    METHODS resolve_reprocess_work_type
+      IMPORTING
+        is_transfer              TYPE /fcbp/if_glt_types=>ty_transfer
+      RETURNING
+        VALUE(rv_work_type)      TYPE char20
+      RAISING
+        /fcbp/cx_glt_error.
+
     METHODS write_action_audit
       IMPORTING
         is_request          TYPE /fcbp/if_glt_types=>ty_monitor_action_request
@@ -110,17 +118,27 @@ CLASS /fcbp/cl_glt_action_service IMPLEMENTATION.
       is_transfer = ls_transfer
       iv_action   = /fcbp/if_glt_types=>c_monitor_action-request_reprocess ).
 
+    DATA(lv_work_type) = resolve_reprocess_work_type( ls_transfer ).
+
     DATA(lv_outbox_id) = enqueue_work(
       iv_transfer_id = ls_request-transfer_id
-      iv_work_type   = /fcbp/if_glt_types=>c_outbox_work_type-reprocess
+      iv_work_type   = lv_work_type
       iv_target_id   = ls_transfer-header-target_id ).
 
-    mo_status_manager->set_status(
-      iv_transfer_id = ls_request-transfer_id
-      iv_status      = /fcbp/if_glt_types=>c_status-reprocess_requested
-      iv_reason      = ls_request-reason_code
-      iv_actor_type  = /fcbp/if_glt_types=>c_actor_type-user
-      iv_actor_id    = sy-uname ).
+    DATA(lv_result_status) = COND /fcbp/if_glt_types=>ty_status(
+      WHEN lv_work_type = /fcbp/if_glt_types=>c_outbox_work_type-status_query
+      THEN ls_transfer-header-status_code
+      ELSE /fcbp/if_glt_types=>c_status-reprocess_requested ).
+
+    IF lv_result_status = /fcbp/if_glt_types=>c_status-reprocess_requested
+       AND ls_transfer-header-status_code <> /fcbp/if_glt_types=>c_status-reprocess_requested.
+      mo_status_manager->set_status(
+        iv_transfer_id = ls_request-transfer_id
+        iv_status      = lv_result_status
+        iv_reason      = ls_request-reason_code
+        iv_actor_type  = /fcbp/if_glt_types=>c_actor_type-user
+        iv_actor_id    = sy-uname ).
+    ENDIF.
 
     DATA(lv_audit_id) = write_action_audit(
       is_request = ls_request
@@ -128,10 +146,10 @@ CLASS /fcbp/cl_glt_action_service IMPLEMENTATION.
 
     rs_result = build_result(
       is_request   = ls_request
-      iv_status    = /fcbp/if_glt_types=>c_status-reprocess_requested
+      iv_status    = lv_result_status
       iv_outbox_id = lv_outbox_id
       iv_audit_id  = lv_audit_id
-      iv_message   = 'Reprocess work queued.' ).
+      iv_message   = |Reprocess request resolved to { lv_work_type } work.| ).
   ENDMETHOD.
 
   METHOD /fcbp/if_glt_action_service~query_status.
@@ -343,11 +361,12 @@ CLASS /fcbp/cl_glt_action_service IMPLEMENTATION.
     DATA(lv_allowed) = abap_false.
 
     IF lv_status = /fcbp/if_glt_types=>c_status-unknown_confirmation AND
-       iv_action <> /fcbp/if_glt_types=>c_monitor_action-query_status.
+       iv_action <> /fcbp/if_glt_types=>c_monitor_action-query_status AND
+       iv_action <> /fcbp/if_glt_types=>c_monitor_action-request_reprocess.
       raise_action_error(
         iv_transfer_id = is_transfer-header-transfer_id
         iv_action      = iv_action
-        iv_text        = 'Unknown confirmation requires queryStatus or poll; retry/reprocess is blocked.' ).
+        iv_text        = 'Unknown confirmation requires status-query resolution; retry/rebuild/dispatch is blocked.' ).
     ENDIF.
 
     CASE iv_action.
@@ -355,7 +374,9 @@ CLASS /fcbp/cl_glt_action_service IMPLEMENTATION.
         lv_allowed = xsdbool(
           lv_status = /fcbp/if_glt_types=>c_status-validation_failed OR
           lv_status = /fcbp/if_glt_types=>c_status-failed_retryable OR
-          lv_status = /fcbp/if_glt_types=>c_status-failed_final ).
+          lv_status = /fcbp/if_glt_types=>c_status-failed_final OR
+          lv_status = /fcbp/if_glt_types=>c_status-unknown_confirmation OR
+          lv_status = /fcbp/if_glt_types=>c_status-reprocess_requested ).
       WHEN /fcbp/if_glt_types=>c_monitor_action-rebuild_after_correction.
         lv_allowed = xsdbool(
           lv_status = /fcbp/if_glt_types=>c_status-validation_failed OR
@@ -401,6 +422,32 @@ CLASS /fcbp/cl_glt_action_service IMPLEMENTATION.
     ls_work-due_at = ls_work-created_at.
 
     rv_outbox_id = mo_repository->insert_outbox_work( ls_work ).
+  ENDMETHOD.
+
+  METHOD resolve_reprocess_work_type.
+    CASE is_transfer-header-status_code.
+      WHEN /fcbp/if_glt_types=>c_status-unknown_confirmation.
+        rv_work_type = /fcbp/if_glt_types=>c_outbox_work_type-status_query.
+      WHEN /fcbp/if_glt_types=>c_status-failed_retryable.
+        rv_work_type = COND #(
+          WHEN is_transfer-header-current_package_id IS INITIAL
+          THEN /fcbp/if_glt_types=>c_outbox_work_type-dispatch
+          ELSE /fcbp/if_glt_types=>c_outbox_work_type-retry ).
+      WHEN /fcbp/if_glt_types=>c_status-validation_failed
+        OR /fcbp/if_glt_types=>c_status-failed_final.
+        rv_work_type = COND #(
+          WHEN is_transfer-header-current_package_id IS INITIAL
+          THEN /fcbp/if_glt_types=>c_outbox_work_type-dispatch
+          ELSE /fcbp/if_glt_types=>c_outbox_work_type-rebuild ).
+      WHEN /fcbp/if_glt_types=>c_status-reprocess_requested.
+        rv_work_type = /fcbp/if_glt_types=>c_outbox_work_type-dispatch.
+      WHEN OTHERS.
+        RAISE EXCEPTION TYPE /fcbp/cx_glt_error
+          EXPORTING
+            transfer_id    = is_transfer-header-transfer_id
+            error_category = /fcbp/if_glt_types=>c_error_category-authorization
+            operator_text  = |Reprocess action cannot be resolved for status { is_transfer-header-status_code }.|.
+    ENDCASE.
   ENDMETHOD.
 
   METHOD write_action_audit.

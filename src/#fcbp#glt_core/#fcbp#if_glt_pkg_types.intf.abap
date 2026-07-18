@@ -1,4 +1,4 @@
-"! Package evidence and journal-shaping DTOs for Aggregation and Split.
+"! Shared package graph DTOs for Source Reading, Aggregation/Split, Package Builder, Validation, and Mapping.
 INTERFACE /fcbp/if_glt_pkg_types PUBLIC.
 
   CONSTANTS:

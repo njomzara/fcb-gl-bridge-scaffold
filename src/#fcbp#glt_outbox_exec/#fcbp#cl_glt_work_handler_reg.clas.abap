@@ -8,8 +8,7 @@ CLASS /fcbp/cl_glt_work_handler_reg DEFINITION PUBLIC FINAL CREATE PUBLIC.
         io_retry        TYPE REF TO /fcbp/if_glt_work_handler OPTIONAL
         io_rebuild      TYPE REF TO /fcbp/if_glt_work_handler OPTIONAL
         io_poll         TYPE REF TO /fcbp/if_glt_work_handler OPTIONAL
-        io_status_query TYPE REF TO /fcbp/if_glt_work_handler OPTIONAL
-        io_reprocess    TYPE REF TO /fcbp/if_glt_work_handler OPTIONAL.
+        io_status_query TYPE REF TO /fcbp/if_glt_work_handler OPTIONAL.
 
     METHODS resolve
       IMPORTING
@@ -25,7 +24,6 @@ CLASS /fcbp/cl_glt_work_handler_reg DEFINITION PUBLIC FINAL CREATE PUBLIC.
     DATA mo_rebuild      TYPE REF TO /fcbp/if_glt_work_handler.
     DATA mo_poll         TYPE REF TO /fcbp/if_glt_work_handler.
     DATA mo_status_query TYPE REF TO /fcbp/if_glt_work_handler.
-    DATA mo_reprocess    TYPE REF TO /fcbp/if_glt_work_handler.
 
 ENDCLASS.
 
@@ -37,7 +35,6 @@ CLASS /fcbp/cl_glt_work_handler_reg IMPLEMENTATION.
     mo_rebuild      = COND #( WHEN io_rebuild      IS BOUND THEN io_rebuild      ELSE NEW /fcbp/cl_glt_wh_rebuild( ) ).
     mo_poll         = COND #( WHEN io_poll         IS BOUND THEN io_poll         ELSE NEW /fcbp/cl_glt_wh_poll( ) ).
     mo_status_query = COND #( WHEN io_status_query IS BOUND THEN io_status_query ELSE NEW /fcbp/cl_glt_wh_status_qry( ) ).
-    mo_reprocess    = COND #( WHEN io_reprocess    IS BOUND THEN io_reprocess    ELSE NEW /fcbp/cl_glt_wh_reprocess( ) ).
   ENDMETHOD.
 
   METHOD resolve.
@@ -52,8 +49,6 @@ CLASS /fcbp/cl_glt_work_handler_reg IMPLEMENTATION.
         ro_handler = mo_poll.
       WHEN /fcbp/if_glt_types=>c_outbox_work_type-status_query.
         ro_handler = mo_status_query.
-      WHEN /fcbp/if_glt_types=>c_outbox_work_type-reprocess.
-        ro_handler = mo_reprocess.
       WHEN OTHERS.
         RAISE EXCEPTION TYPE /fcbp/cx_glt_error
           EXPORTING
