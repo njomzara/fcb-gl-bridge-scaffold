@@ -25,6 +25,21 @@
     "summary": {
       "type": "string"
     },
+    "gap_description": {
+      "type": "string",
+      "description": "Concise description of the gap that was evaluated."
+    },
+    "reasoning": {
+      "type": "string",
+      "description": "Decision rationale, evidence considered, and why the selected outcome is preferred."
+    },
+    "introduced_changes": {
+      "type": "array",
+      "description": "Fixes, documentation updates, and new artifacts introduced during this iteration.",
+      "items": {
+        "type": "string"
+      }
+    },
     "validation_passed": {
       "type": "boolean"
     }
@@ -34,6 +49,9 @@
     "gap_id",
     "outcome",
     "summary",
+    "gap_description",
+    "reasoning",
+    "introduced_changes",
     "validation_passed"
   ],
   "additionalProperties": false

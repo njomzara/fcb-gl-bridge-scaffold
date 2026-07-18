@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Code-vs-DTS discovery result",
+  "type": "object",
+  "properties": {
+    "gap_count": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of unresolved gaps written to the newly discovered register."
+    },
+    "summary": {
+      "type": "string"
+    },
+    "baseline_reviewed": {
+      "type": "boolean",
+      "description": "True only when the mandatory architecture baseline was read and analyzed."
+    },
+    "reviewed_dts_files": {
+      "type": "array",
+      "description": "File names of every detailed Markdown specification reviewed under DTS/.",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "implementation_reviewed": {
+      "type": "boolean",
+      "description": "True only when the current ABAP scaffold implementation and relevant tests/metadata were analyzed."
+    },
+    "comparison_lanes": {
+      "type": "object",
+      "properties": {
+        "baseline_to_dts": { "type": "boolean" },
+        "baseline_to_code": { "type": "boolean" },
+        "dts_to_code": { "type": "boolean" },
+        "cross_layer_dts": { "type": "boolean" }
+      },
+      "required": [
+        "baseline_to_dts",
+        "baseline_to_code",
+        "dts_to_code",
+        "cross_layer_dts"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "gap_count",
+    "summary",
+    "baseline_reviewed",
+    "reviewed_dts_files",
+    "implementation_reviewed",
+    "comparison_lanes"
+  ],
+  "additionalProperties": false
+}

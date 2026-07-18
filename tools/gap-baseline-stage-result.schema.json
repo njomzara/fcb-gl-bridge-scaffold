@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Architecture baseline discovery stage result",
+  "type": "object",
+  "properties": {
+    "baseline_reviewed": { "type": "boolean" },
+    "artifact_path": { "type": "string" },
+    "summary": { "type": "string" }
+  },
+  "required": ["baseline_reviewed", "artifact_path", "summary"],
+  "additionalProperties": false
+}

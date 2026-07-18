@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Cross-layer discovery stage result",
+  "type": "object",
+  "properties": {
+    "artifact_path": { "type": "string" },
+    "all_layer_reports_reviewed": { "type": "boolean" },
+    "implementation_interfaces_reviewed": { "type": "boolean" },
+    "candidate_gap_count": { "type": "integer", "minimum": 0 },
+    "summary": { "type": "string" }
+  },
+  "required": [
+    "artifact_path",
+    "all_layer_reports_reviewed",
+    "implementation_interfaces_reviewed",
+    "candidate_gap_count",
+    "summary"
+  ],
+  "additionalProperties": false
+}

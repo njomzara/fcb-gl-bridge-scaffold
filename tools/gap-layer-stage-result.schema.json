@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DTS layer discovery stage result",
+  "type": "object",
+  "properties": {
+    "dts_file": { "type": "string" },
+    "artifact_path": { "type": "string" },
+    "dts_reviewed": { "type": "boolean" },
+    "baseline_used": { "type": "boolean" },
+    "implementation_reviewed": { "type": "boolean" },
+    "candidate_gap_count": { "type": "integer", "minimum": 0 },
+    "summary": { "type": "string" }
+  },
+  "required": [
+    "dts_file",
+    "artifact_path",
+    "dts_reviewed",
+    "baseline_used",
+    "implementation_reviewed",
+    "candidate_gap_count",
+    "summary"
+  ],
+  "additionalProperties": false
+}
