@@ -121,8 +121,21 @@ function Invoke-Git {
         [string[]]$Arguments
     )
 
-    $output = & git -C $Repository @Arguments 2>&1
-    if ($LASTEXITCODE -ne 0) {
+    # Windows PowerShell converts native stderr into PowerShell error records.
+    # With the script-wide ErrorActionPreference set to Stop, harmless Git
+    # progress messages (for example, "Switched to a new branch") would
+    # otherwise terminate the script even when Git returned exit code 0.
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $output = & git -C $Repository @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
+    if ($exitCode -ne 0) {
         $details = ($output | Out-String).Trim()
         throw "Git failed in ${Repository}: git $($Arguments -join ' ')`n$details"
     }
