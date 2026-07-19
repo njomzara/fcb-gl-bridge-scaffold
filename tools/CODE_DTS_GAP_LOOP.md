@@ -3,6 +3,10 @@
 This guide describes the workflow implemented by
 `run-code-dts-gap-loop.ps1`.
 
+Approved human decisions are prepared and imported with
+`manage-code-dts-gap-decisions.ps1`. See `HUMAN_DECISION_INTAKE.md` for the
+separate decision-intake workflow.
+
 ## Repositories
 
 The automation coordinates two Git repositories:
