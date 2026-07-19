@@ -518,6 +518,16 @@ filename, and all four comparison lanes based on the persisted staged evidence.
         $discovery.reviewed_dts_files |
             ForEach-Object { [System.IO.Path]::GetFileName([string]$_) }
     )
+    $duplicateDtsNames = @(
+        $synthesisDtsNames |
+            Group-Object |
+            Where-Object { $_.Count -gt 1 } |
+            ForEach-Object { $_.Name }
+    )
+    if ($duplicateDtsNames.Count -gt 0) {
+        throw "Staged discovery coverage failed. Duplicate DTS confirmation: $($duplicateDtsNames -join ', ')"
+    }
+
     $missingDtsFiles = @(
         $MandatoryDtsFiles |
             Where-Object {
