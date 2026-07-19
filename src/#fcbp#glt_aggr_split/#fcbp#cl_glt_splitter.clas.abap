@@ -19,6 +19,13 @@ CLASS /fcbp/cl_glt_splitter DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RAISING
         /fcbp/cx_glt_preparation.
 
+    METHODS validate_required_dimensions
+      IMPORTING
+        is_line   TYPE /fcbp/if_glt_pkg_types=>ty_canonical_line
+        is_policy TYPE /fcbp/if_glt_config_types=>ty_split_policy
+      RAISING
+        /fcbp/cx_glt_preparation.
+
     METHODS compact_hash
       IMPORTING
         iv_input       TYPE string
@@ -52,6 +59,8 @@ CLASS /fcbp/cl_glt_splitter IMPLEMENTATION.
     DATA lv_last_outdoc_id TYPE /fcbp/if_glt_pkg_types=>ty_outdoc_id.
 
     LOOP AT lt_line INTO DATA(ls_line).
+      validate_required_dimensions( is_line = ls_line is_policy = is_split_policy ).
+
       DATA(ls_key) = mo_key_builder->build_key(
         is_line         = ls_line
         is_split_policy = is_split_policy ).
@@ -230,6 +239,60 @@ CLASS /fcbp/cl_glt_splitter IMPLEMENTATION.
           profile_id     = is_policy-split_profile_id
           rule_id        = 'GLT_SPL_003'
           operator_text  = 'Split limits must not be negative.'.
+    ENDIF.
+
+    CASE is_policy-balance_scope.
+      WHEN /fcbp/if_glt_pkg_types=>c_balance_scope-document.
+      WHEN /fcbp/if_glt_pkg_types=>c_balance_scope-company_code_currency.
+        IF is_policy-split_by_company_code = abap_false OR is_policy-split_by_currency = abap_false.
+          RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation EXPORTING
+            error_category = /fcbp/if_glt_types=>c_error_category-config profile_id = is_policy-split_profile_id
+            rule_id = 'GLT_AGSP_CFG_003' field_name = 'BALANCE_SCOPE'
+            operator_text = 'Company/currency balance requires both split dimensions.'.
+        ENDIF.
+      WHEN /fcbp/if_glt_pkg_types=>c_balance_scope-company_code_currency_ledger.
+        IF is_policy-split_by_company_code = abap_false OR is_policy-split_by_currency = abap_false OR is_policy-split_by_ledger_group = abap_false.
+          RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation EXPORTING
+            error_category = /fcbp/if_glt_types=>c_error_category-config profile_id = is_policy-split_profile_id
+            rule_id = 'GLT_AGSP_CFG_003' field_name = 'BALANCE_SCOPE'
+            operator_text = 'Company/currency/ledger balance requires all matching split dimensions.'.
+        ENDIF.
+      WHEN /fcbp/if_glt_pkg_types=>c_balance_scope-document_currency_ledger.
+        IF is_policy-split_by_currency = abap_false OR is_policy-split_by_ledger_group = abap_false.
+          RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation EXPORTING
+            error_category = /fcbp/if_glt_types=>c_error_category-config profile_id = is_policy-split_profile_id
+            rule_id = 'GLT_AGSP_CFG_003' field_name = 'BALANCE_SCOPE'
+            operator_text = 'Document/currency/ledger balance requires currency and ledger split dimensions.'.
+        ENDIF.
+      WHEN OTHERS.
+        RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation EXPORTING
+          error_category = /fcbp/if_glt_types=>c_error_category-config profile_id = is_policy-split_profile_id
+          rule_id = 'GLT_AGSP_CFG_003' field_name = 'BALANCE_SCOPE'
+          operator_text = 'Split balance scope is required and must be supported.'.
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD validate_required_dimensions.
+    DATA lv_field_name TYPE char40.
+    IF is_policy-split_by_company_code = abap_true AND is_line-company_code IS INITIAL.
+      lv_field_name = 'COMPANY_CODE'.
+    ELSEIF is_policy-split_by_currency = abap_true AND is_line-currency IS INITIAL.
+      lv_field_name = 'CURRENCY'.
+    ELSEIF is_policy-split_by_posting_date = abap_true AND is_line-posting_date IS INITIAL.
+      lv_field_name = 'POSTING_DATE'.
+    ELSEIF is_policy-split_by_gl_doc_type = abap_true AND is_line-document_type IS INITIAL.
+      lv_field_name = 'DOCUMENT_TYPE'.
+    ELSEIF is_policy-split_by_ledger_group = abap_true AND is_line-ledger_group IS INITIAL.
+      lv_field_name = 'LEDGER_GROUP'.
+    ENDIF.
+
+    IF lv_field_name IS NOT INITIAL.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_preparation EXPORTING
+        error_category = /fcbp/if_glt_types=>c_error_category-validation
+        profile_id = is_policy-split_profile_id line_id = is_line-line_id
+        rule_id = COND #( WHEN lv_field_name = 'LEDGER_GROUP' THEN 'GLT_BAL_004' ELSE 'GLT_SPL_005' )
+        field_name = lv_field_name
+        operator_text = |Required split field { lv_field_name } is missing from canonical line.|.
     ENDIF.
   ENDMETHOD.
 
