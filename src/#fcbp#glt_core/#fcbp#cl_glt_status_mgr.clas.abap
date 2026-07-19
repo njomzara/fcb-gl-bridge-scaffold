@@ -23,6 +23,12 @@ CLASS /fcbp/cl_glt_status_mgr DEFINITION PUBLIC FINAL CREATE PUBLIC.
       RETURNING
         VALUE(rv_required)         TYPE abap_bool.
 
+    METHODS assert_posted_complete
+      IMPORTING
+        is_transfer TYPE /fcbp/if_glt_types=>ty_transfer
+      RAISING
+        /fcbp/cx_glt_error.
+
 ENDCLASS.
 
 CLASS /fcbp/cl_glt_status_mgr IMPLEMENTATION.
@@ -119,6 +125,10 @@ CLASS /fcbp/cl_glt_status_mgr IMPLEMENTATION.
       iv_old_status = ls_header-status_code
       iv_new_status = iv_status ).
 
+    IF iv_status = /fcbp/if_glt_types=>c_status-posted.
+      assert_posted_complete( ls_transfer ).
+    ENDIF.
+
     DATA(lv_ext_status) = /fcbp/if_glt_status_manager~derive_external_status( iv_status ).
     DATA(lv_seq_no) = lines( ls_transfer-statuses ) + 1.
 
@@ -147,6 +157,62 @@ CLASS /fcbp/cl_glt_status_mgr IMPLEMENTATION.
     ls_header-changed_at      = lv_now.
     ls_header-version_no      = ls_header-version_no + 1.
     mo_repository->update_header( ls_header ).
+  ENDMETHOD.
+
+  METHOD assert_posted_complete.
+    DATA(lv_package_id) = is_transfer-header-current_package_id.
+    IF lv_package_id IS INITIAL.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_error
+        EXPORTING
+          transfer_id    = is_transfer-header-transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-technical
+          operator_text  = 'POSTED requires a current package with complete document confirmation evidence.'.
+    ENDIF.
+
+    SELECT outdoc_id
+      FROM /fcbp/glt_doc
+      WHERE package_id = @lv_package_id
+      INTO TABLE @DATA(lt_outdoc_id).
+    IF lt_outdoc_id IS INITIAL.
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_error
+        EXPORTING
+          transfer_id    = is_transfer-header-transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-technical
+          operator_text  = |POSTED requires outbound documents for current package { lv_package_id }.|.
+    ENDIF.
+
+    LOOP AT lt_outdoc_id INTO DATA(lv_outdoc_id).
+      SELECT outcome, response_hash, raw_response_ref
+        FROM /fcbp/glt_att
+        WHERE transfer_id = @is_transfer-header-transfer_id
+          AND package_id = @lv_package_id
+          AND outdoc_id = @lv_outdoc_id
+        ORDER BY finished_at DESCENDING, started_at DESCENDING
+        INTO TABLE @DATA(lt_attempt_evidence)
+        UP TO 1 ROWS.
+      DATA(ls_attempt_evidence) = VALUE #( lt_attempt_evidence[ 1 ] OPTIONAL ).
+      IF ls_attempt_evidence-outcome <> /fcbp/if_glt_types=>c_adapter_outcome-posted
+         OR ( ls_attempt_evidence-response_hash IS INITIAL
+              AND ls_attempt_evidence-raw_response_ref IS INITIAL ).
+        RAISE EXCEPTION TYPE /fcbp/cx_glt_error
+          EXPORTING
+            transfer_id    = is_transfer-header-transfer_id
+            error_category = /fcbp/if_glt_types=>c_error_category-technical
+            operator_text  = |POSTED blocked: document { lv_outdoc_id } in current package { lv_package_id } lacks durable terminal confirmation evidence.|.
+      ENDIF.
+    ENDLOOP.
+
+    DATA(lv_confirmed_refs) = REDUCE i(
+      INIT result = 0
+      FOR ref IN is_transfer-target_refs
+      NEXT result = result + COND i( WHEN ref-confirmed_at IS NOT INITIAL THEN 1 ELSE 0 ) ).
+    IF lv_confirmed_refs < lines( lt_outdoc_id ).
+      RAISE EXCEPTION TYPE /fcbp/cx_glt_error
+        EXPORTING
+          transfer_id    = is_transfer-header-transfer_id
+          error_category = /fcbp/if_glt_types=>c_error_category-technical
+          operator_text  = |POSTED blocked: current package { lv_package_id } has { lines( lt_outdoc_id ) } documents but only { lv_confirmed_refs } durable confirmed target references.|.
+    ENDIF.
   ENDMETHOD.
 
   METHOD derive_internal_state.
