@@ -103,9 +103,8 @@ CLASS /fcbp/cl_glt_handoff_factory IMPLEMENTATION.
     rs_header-target_id               = is_route_context-target_id.
     rs_header-processing_mode         = is_request-processing_mode.
     rs_header-company_code            = is_request-company_code.
-    rs_header-posting_date            = sy-datum.
-    rs_header-document_date           = sy-datum.
-    rs_header-currency                = 'USD'.
+    " Accounting facts remain initial until source reading/package preparation
+    " supplies durable source evidence. Handoff must not manufacture them.
     rs_header-external_corr_id        = is_request-external_corr_id.
     rs_header-correlation_id          = next_id( 'CORR' ).
     rs_header-idempotency_key         = iv_registration_key.
@@ -117,7 +116,7 @@ CLASS /fcbp/cl_glt_handoff_factory IMPLEMENTATION.
     rs_header-external_status         = /fcbp/if_glt_types=>c_ext_status-received.
     rs_header-internal_state          = /fcbp/if_glt_types=>c_internal_state-new.
     rs_header-retry_count             = 0.
-    rs_header-max_retry_count         = 5.
+    " The maximum retry count remains initial until resolved from policy.
     rs_header-target_system           = is_route_context-target_system.
     rs_header-target_adapter          = is_route_context-target_adapter.
     rs_header-created_by              = lv_actor.
