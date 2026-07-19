@@ -59,6 +59,26 @@ CLASS /fcbp/cl_glt_src_read_recon IMPLEMENTATION.
       iv_reconciliation_key = lv_reconciliation_key
       is_request            = is_request ).
 
+    DATA(lv_eligible_count) = 0.
+    LOOP AT lt_item INTO DATA(ls_item) WHERE exclude_flag = abap_false.
+      lv_eligible_count += 1.
+      IF ls_item-source_snapshot_id <> ls_header-source_snapshot_id
+         OR ls_item-company_code <> ls_header-company_code
+         OR ls_item-currency <> ls_header-currency.
+        RAISE EXCEPTION /fcbp/cx_glt_source_read=>inconsistent(
+          is_request    = is_request
+          iv_field_name = 'HEADER_ITEM_CONSISTENCY'
+          iv_detail     = |Source item { ls_item-source_doc_no }/{ ls_item-source_item_no } does not match reconciliation header snapshot, company code, or currency.| ).
+      ENDIF.
+    ENDLOOP.
+
+    IF lv_eligible_count <> ls_header-item_count.
+      RAISE EXCEPTION /fcbp/cx_glt_source_read=>inconsistent(
+        is_request    = is_request
+        iv_field_name = 'ITEM_COUNT'
+        iv_detail     = |Header item count { ls_header-item_count } differs from eligible row count { lv_eligible_count }.| ).
+    ENDIF.
+
     rt_source_line = mo_normalizer->normalize_items(
       iv_source_type      = /fcbp/if_glt_src_types=>c_source_type-reconciliation_key
       iv_source_reference = is_request-source_reference

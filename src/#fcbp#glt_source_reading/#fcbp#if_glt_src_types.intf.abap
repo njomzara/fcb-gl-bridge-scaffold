@@ -77,6 +77,7 @@ INTERFACE /fcbp/if_glt_src_types PUBLIC.
            read_mode            TYPE char20,
            expected_snapshot_id TYPE ty_source_snapshot_id,
            previous_source_hash TYPE ty_source_hash,
+           max_line_count       TYPE i,
            requested_by         TYPE syuname,
          END OF ty_source_read_request.
 

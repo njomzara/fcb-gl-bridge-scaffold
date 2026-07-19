@@ -149,6 +149,14 @@ CLASS /fcbp/cl_glt_source_reader IMPLEMENTATION.
           iv_detail     = |Incomplete source identity for item { sy-tabix }.| ).
       ENDIF.
 
+      IF ls_source_line-source_type <> is_request-source_type.
+        RAISE EXCEPTION /fcbp/cx_glt_source_read=>from_request(
+          is_request       = is_request
+          iv_error_code    = /fcbp/if_glt_src_types=>c_error_code-conflict
+          iv_field_name    = 'SOURCE_TYPE'
+          iv_operator_text = 'Returned source line does not match the requested source type.' ).
+      ENDIF.
+
       IF ls_source_line-source_reference <> is_request-source_reference.
         RAISE EXCEPTION /fcbp/cx_glt_source_read=>from_request(
           is_request       = is_request
@@ -158,8 +166,30 @@ CLASS /fcbp/cl_glt_source_reader IMPLEMENTATION.
       ENDIF.
     ENDLOOP.
 
+    IF is_request-max_line_count > 0
+       AND lines( ct_source_line ) > is_request-max_line_count.
+      RAISE EXCEPTION /fcbp/cx_glt_source_read=>inconsistent(
+        is_request    = is_request
+        iv_field_name = 'MAX_LINE_COUNT'
+        iv_detail     = |Source returned { lines( ct_source_line ) } eligible lines; configured maximum is { is_request-max_line_count }.| ).
+    ENDIF.
+
     SORT ct_source_line BY source_type source_reference source_doc_no source_item_no
                            company_code gl_account debit_credit currency source_hash line_hash.
+
+    LOOP AT ct_source_line INTO ls_source_line.
+      IF sy-tabix > 1.
+        DATA(lv_previous_index) = sy-tabix - 1.
+        DATA(ls_previous) = ct_source_line[ lv_previous_index ].
+        IF ls_previous-source_doc_no = ls_source_line-source_doc_no
+           AND ls_previous-source_item_no = ls_source_line-source_item_no.
+          RAISE EXCEPTION /fcbp/cx_glt_source_read=>inconsistent(
+            is_request    = is_request
+            iv_field_name = 'SOURCE_IDENTITY'
+            iv_detail     = |Duplicate source identity { ls_source_line-source_doc_no }/{ ls_source_line-source_item_no }.| ).
+        ENDIF.
+      ENDIF.
+    ENDLOOP.
   ENDMETHOD.
 
 ENDCLASS.
