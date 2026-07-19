@@ -424,8 +424,7 @@ CLASS /fcbp/cl_glt_val_rules IMPLEMENTATION.
     ENDIF.
 
     LOOP AT it_rule INTO DATA(ls_rule) WHERE active_flag = abap_true.
-      IF ls_rule-policy_expression_ref IS NOT INITIAL AND
-         ls_rule-policy_expression_ref <> 'REQUIRE_FIELD' AND
+      IF ls_rule-policy_expression_ref <> 'REQUIRE_FIELD' AND
          ls_rule-policy_expression_ref <> 'ALLOW_PASS_THROUGH' AND
          ls_rule-policy_expression_ref <> 'BALANCE_BY_CURRENCY'.
         add_finding(
@@ -433,11 +432,11 @@ CLASS /fcbp/cl_glt_val_rules IMPLEMENTATION.
                     iv_rule_id = ls_rule-rule_id
                     iv_category = ls_rule-rule_category
                     iv_message_code = 'EXPRESSION_UNSUPPORTED'
-                    iv_operator_text = 'Validation policy expression reference is not implemented in the scaffold.'
+                    iv_operator_text = 'Validation policy expression reference is missing or not implemented in the scaffold.'
                     iv_field_name = ls_rule-field_scope
                     iv_remediation_owner = /fcbp/if_glt_val_types=>c_remediation_owner-config
                     iv_severity = ls_rule-severity
-                    iv_blocking = ls_rule-blocking_flag
+                    iv_blocking = abap_true
           CHANGING ct_finding = ct_finding ).
       ENDIF.
 
