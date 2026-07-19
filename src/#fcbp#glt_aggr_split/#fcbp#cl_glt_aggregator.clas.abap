@@ -75,6 +75,7 @@ CLASS /fcbp/cl_glt_aggregator IMPLEMENTATION.
           line_id = |CLN-{ lv_seq }|
           line_no = lv_seq
           company_code = ls_source-company_code
+          chart_of_accounts = ls_source-chart_of_accounts
           gl_account = ls_source-gl_account
           debit_credit = ls_source-debit_credit
           amount = ls_source-amount

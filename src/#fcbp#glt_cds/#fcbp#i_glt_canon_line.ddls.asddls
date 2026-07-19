@@ -8,6 +8,7 @@ define view entity /fcbp/i_glt_canon_line
   key line_id             as LineId,
       line_no             as LineNumber,
       company_code        as CompanyCode,
+      chart_of_accounts   as ChartOfAccounts,
       gl_account          as GLAccount,
       debit_credit        as DebitCredit,
       amount              as Amount,

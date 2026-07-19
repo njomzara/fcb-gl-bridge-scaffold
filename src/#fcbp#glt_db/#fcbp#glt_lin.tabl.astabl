@@ -11,6 +11,7 @@ define table /fcbp/glt_lin {
   key line_id             : abap.char(32) not null;
   line_no                 : abap.numc(6) not null;
   company_code            : abap.char(4);
+  chart_of_accounts       : abap.char(4);
   gl_account              : abap.char(10);
   debit_credit            : abap.char(1);
   amount                  : abap.dec(23,2);

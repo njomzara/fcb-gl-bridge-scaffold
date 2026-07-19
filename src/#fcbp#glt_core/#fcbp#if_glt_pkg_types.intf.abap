@@ -147,6 +147,7 @@ INTERFACE /fcbp/if_glt_pkg_types PUBLIC.
            line_id              TYPE ty_line_id,
            line_no              TYPE numc6,
            company_code         TYPE char4,
+           chart_of_accounts    TYPE char4,
            gl_account           TYPE char10,
            debit_credit         TYPE char1,
            amount               TYPE p LENGTH 16 DECIMALS 2,

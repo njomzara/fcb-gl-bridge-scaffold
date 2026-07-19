@@ -284,6 +284,14 @@ CLASS /fcbp/cl_glt_mapper IMPLEMENTATION.
         CHANGING cv_value = lv_line_value cs_result = rs_result ).
       <ls_line>-company_code = lv_line_value.
 
+      lv_line_value = <ls_line>-chart_of_accounts.
+      map_line_field(
+        EXPORTING is_context = is_context iv_outdoc_id = <ls_line>-outdoc_id iv_line_no = <ls_line>-line_no
+                  iv_field_name = /fcbp/if_glt_map_types=>c_field-chart_of_accounts
+                  iv_required = abap_false iv_max_length = 4 it_rule = lt_rule
+        CHANGING cv_value = lv_line_value cs_result = rs_result ).
+      <ls_line>-chart_of_accounts = lv_line_value.
+
       lv_line_value = <ls_line>-gl_account.
       map_line_field(
         EXPORTING is_context = is_context iv_outdoc_id = <ls_line>-outdoc_id iv_line_no = <ls_line>-line_no
