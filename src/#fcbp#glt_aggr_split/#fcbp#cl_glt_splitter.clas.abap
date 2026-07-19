@@ -48,14 +48,19 @@ CLASS /fcbp/cl_glt_splitter IMPLEMENTATION.
 
     DATA(lt_line) = it_canonical_line.
     SORT lt_line BY company_code currency posting_date document_type ledger_group aggr_signature_hash line_id.
+    DATA lv_last_split_key TYPE char64.
+    DATA lv_last_outdoc_id TYPE /fcbp/if_glt_pkg_types=>ty_outdoc_id.
 
     LOOP AT lt_line INTO DATA(ls_line).
       DATA(ls_key) = mo_key_builder->build_key(
         is_line         = ls_line
         is_split_policy = is_split_policy ).
 
+      IF ls_key-split_key_hash <> lv_last_split_key.
+        CLEAR lv_last_outdoc_id.
+      ENDIF.
       READ TABLE rs_result-outdocs ASSIGNING FIELD-SYMBOL(<ls_doc>)
-        WITH KEY reference = ls_key-split_key_hash.
+        WITH KEY outdoc_id = lv_last_outdoc_id.
       IF sy-subrc <> 0.
         DATA(lv_doc_seq) = lines( rs_result-outdocs ) + 1.
         DATA(ls_doc) = VALUE /fcbp/if_glt_pkg_types=>ty_outdoc(
@@ -72,24 +77,64 @@ CLASS /fcbp/cl_glt_splitter IMPLEMENTATION.
           header_text = |GL Bridge package split { lv_doc_seq }|
           balance_status = /fcbp/if_glt_pkg_types=>c_balance_status-not_checked ).
         APPEND ls_doc TO rs_result-outdocs ASSIGNING <ls_doc>.
+        lv_last_split_key = ls_key-split_key_hash.
+        lv_last_outdoc_id = <ls_doc>-outdoc_id.
+      ELSE.
+        DATA lv_current_debit TYPE p LENGTH 16 DECIMALS 2.
+        DATA lv_current_credit TYPE p LENGTH 16 DECIMALS 2.
+        CLEAR: lv_current_debit, lv_current_credit.
+        LOOP AT rs_result-canonical_lines INTO DATA(ls_current_line)
+          WHERE outdoc_id = <ls_doc>-outdoc_id.
+          CASE ls_current_line-debit_credit.
+            WHEN 'D' OR 'S'.
+              lv_current_debit = lv_current_debit + ls_current_line-amount.
+            WHEN 'C' OR 'H'.
+              lv_current_credit = lv_current_credit + ls_current_line-amount.
+          ENDCASE.
+        ENDLOOP.
+
+        DATA(lv_next_debit) = lv_current_debit.
+        DATA(lv_next_credit) = lv_current_credit.
+        CASE ls_line-debit_credit.
+          WHEN 'D' OR 'S'.
+            lv_next_debit = lv_next_debit + ls_line-amount.
+          WHEN 'C' OR 'H'.
+            lv_next_credit = lv_next_credit + ls_line-amount.
+        ENDCASE.
+
+        DATA(lv_line_limit_reached) = xsdbool(
+          is_split_policy-max_lines_per_doc > 0 AND
+          <ls_doc>-line_count + 1 > is_split_policy-max_lines_per_doc ).
+        DATA(lv_amount_limit_reached) = xsdbool(
+          is_split_policy-max_amount > 0 AND
+          ( lv_next_debit > is_split_policy-max_amount OR
+            lv_next_credit > is_split_policy-max_amount ) ).
+
+        IF lv_current_debit = lv_current_credit AND
+           ( lv_line_limit_reached = abap_true OR lv_amount_limit_reached = abap_true ).
+          lv_doc_seq = lines( rs_result-outdocs ) + 1.
+          ls_doc = VALUE #(
+            package_id = is_policy_context-package_id
+            outdoc_id = |DOC-{ lv_doc_seq }|
+            document_sequence = lv_doc_seq
+            company_code = ls_line-company_code
+            posting_date = ls_line-posting_date
+            document_date = ls_line-posting_date
+            gl_doc_type = ls_line-document_type
+            currency = ls_line-currency
+            ledger_group = ls_line-ledger_group
+            reference = compact_hash( |{ ls_key-split_key_hash }:CONT:{ lv_doc_seq }| )
+            header_text = |GL Bridge package split { lv_doc_seq }|
+            balance_status = /fcbp/if_glt_pkg_types=>c_balance_status-not_checked ).
+          APPEND ls_doc TO rs_result-outdocs ASSIGNING <ls_doc>.
+          lv_last_outdoc_id = <ls_doc>-outdoc_id.
+        ENDIF.
       ENDIF.
 
       <ls_doc>-line_count = <ls_doc>-line_count + 1.
       ls_line-package_id = is_policy_context-package_id.
       ls_line-outdoc_id = <ls_doc>-outdoc_id.
       ls_line-line_no = <ls_doc>-line_count.
-
-      IF is_split_policy-max_lines_per_doc > 0 AND
-         <ls_doc>-line_count > is_split_policy-max_lines_per_doc.
-        APPEND VALUE /fcbp/if_glt_aggr_types=>ty_preparation_message(
-          rule_id = 'GLT_SPL_007'
-          category = /fcbp/if_glt_aggr_types=>c_prep_category-split
-          severity = /fcbp/if_glt_types=>c_severity-error
-          blocking = abap_true
-          outdoc_id = <ls_doc>-outdoc_id
-          line_id = ls_line-line_id
-          operator_text = 'Split max line count cannot be satisfied by the scaffold grouping.' ) TO rs_result-messages.
-      ENDIF.
 
       APPEND ls_line TO rs_result-canonical_lines.
     ENDLOOP.
@@ -118,6 +163,27 @@ CLASS /fcbp/cl_glt_splitter IMPLEMENTATION.
       <ls_doc>-credit_amount = ls_balance-credit_amount.
       <ls_doc>-difference_amount = ls_balance-difference_amount.
       <ls_doc>-balance_status = ls_balance-balance_status.
+      IF is_split_policy-max_lines_per_doc > 0 AND
+         <ls_doc>-line_count > is_split_policy-max_lines_per_doc.
+        APPEND VALUE #(
+          rule_id = 'GLT_SPL_007'
+          category = /fcbp/if_glt_aggr_types=>c_prep_category-split
+          severity = /fcbp/if_glt_types=>c_severity-error
+          blocking = abap_true
+          outdoc_id = <ls_doc>-outdoc_id
+          operator_text = 'Line-count limit cannot be satisfied without breaking document balance.' ) TO rs_result-messages.
+      ENDIF.
+      IF is_split_policy-max_amount > 0 AND
+         ( ls_balance-debit_amount > is_split_policy-max_amount OR
+           ls_balance-credit_amount > is_split_policy-max_amount ).
+        APPEND VALUE #(
+          rule_id = 'GLT_SPL_008'
+          category = /fcbp/if_glt_aggr_types=>c_prep_category-split
+          severity = /fcbp/if_glt_types=>c_severity-error
+          blocking = abap_true
+          outdoc_id = <ls_doc>-outdoc_id
+          operator_text = 'Amount limit cannot be satisfied without breaking document balance.' ) TO rs_result-messages.
+      ENDIF.
       <ls_doc>-payload_hash = compact_hash(
         |DOC:{ <ls_doc>-outdoc_id }:{ <ls_doc>-line_count }:{ <ls_doc>-debit_amount }:{ <ls_doc>-credit_amount }:{ <ls_doc>-difference_amount }| ).
       APPEND ls_balance TO rs_result-balance_results.
