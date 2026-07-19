@@ -130,6 +130,51 @@ CLASS /fcbp/cl_glt_config_health IMPLEMENTATION.
     IF mo_adapter_capability IS BOUND.
       DATA(lt_adapter_finding) = mo_adapter_capability->validate_profile( is_profile ).
       APPEND LINES OF lt_adapter_finding TO rt_finding.
+
+      IF is_profile-split_profile_id IS NOT INITIAL.
+        DATA(ls_capability) = mo_adapter_capability->get_for_profile( is_profile ).
+
+        IF mo_repository IS NOT BOUND.
+          add_finding(
+            EXPORTING iv_target_id = is_profile-target_id
+                      iv_config_object_type = /fcbp/if_glt_config_types=>c_object_type-split_policy
+                      iv_config_object_key = is_profile-split_profile_id
+                      iv_check_id = 'GLT_CFG_014'
+                      iv_severity = /fcbp/if_glt_types=>c_severity-error
+                      iv_blocking = abap_true
+                      iv_code = 'SPLIT_CAPABILITY_UNCHECKED'
+                      iv_text = 'Split policy compatibility cannot be proved without configuration repository access.'
+            CHANGING ct_finding = rt_finding ).
+        ELSE.
+          DATA(ls_split_policy) = mo_repository->read_split_policy( is_profile-split_profile_id ).
+
+          IF ls_split_policy-split_profile_id IS INITIAL.
+            add_finding(
+              EXPORTING iv_target_id = is_profile-target_id
+                        iv_config_object_type = /fcbp/if_glt_config_types=>c_object_type-split_policy
+                        iv_config_object_key = is_profile-split_profile_id
+                        iv_check_id = 'GLT_CFG_014'
+                        iv_severity = /fcbp/if_glt_types=>c_severity-error
+                        iv_blocking = abap_true
+                        iv_code = 'SPLIT_POLICY_MISSING'
+                        iv_text = 'Referenced split policy is missing and cannot be checked against target limits.'
+              CHANGING ct_finding = rt_finding ).
+          ELSEIF ls_capability-max_lines <= 0
+              OR ls_split_policy-max_lines_per_doc <= 0
+              OR ls_split_policy-max_lines_per_doc > ls_capability-max_lines.
+            add_finding(
+              EXPORTING iv_target_id = is_profile-target_id
+                        iv_config_object_type = /fcbp/if_glt_config_types=>c_object_type-split_policy
+                        iv_config_object_key = is_profile-split_profile_id
+                        iv_check_id = 'GLT_CFG_014'
+                        iv_severity = /fcbp/if_glt_types=>c_severity-error
+                        iv_blocking = abap_true
+                        iv_code = 'SPLIT_TARGET_LIMIT_CONFLICT'
+                        iv_text = 'Split maximum lines must be positive and must not exceed the adapter capability.'
+              CHANGING ct_finding = rt_finding ).
+          ENDIF.
+        ENDIF.
+      ENDIF.
     ENDIF.
   ENDMETHOD.
 
