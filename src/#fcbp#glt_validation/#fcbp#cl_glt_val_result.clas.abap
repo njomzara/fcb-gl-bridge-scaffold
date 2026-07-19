@@ -52,11 +52,9 @@ CLASS /fcbp/cl_glt_val_result IMPLEMENTATION.
       rs_result-result_status = /fcbp/if_glt_val_types=>c_run_status-passed.
       rs_result-passed = abap_true.
       rs_result-next_allowed_step = /fcbp/if_glt_val_types=>c_next_step-mapping.
-    ELSEIF is_context-waiver_context_id IS NOT INITIAL.
-      rs_result-result_status = /fcbp/if_glt_val_types=>c_run_status-waived.
-      rs_result-passed = abap_true.
-      rs_result-next_allowed_step = /fcbp/if_glt_val_types=>c_next_step-mapping.
     ELSE.
+      " A caller-supplied identifier is not waiver evidence. Until governed waiver
+      " validation is bound, blocking findings must always fail closed.
       rs_result-result_status = /fcbp/if_glt_val_types=>c_run_status-failed.
       rs_result-passed = abap_false.
       rs_result-next_allowed_step = /fcbp/if_glt_val_types=>c_next_step-operator_action.
