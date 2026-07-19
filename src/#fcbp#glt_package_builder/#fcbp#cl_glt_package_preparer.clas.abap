@@ -13,7 +13,8 @@ CLASS /fcbp/cl_glt_package_preparer DEFINITION PUBLIC FINAL CREATE PUBLIC.
         io_package_repo  TYPE REF TO /fcbp/if_glt_package_repo OPTIONAL
         io_lock          TYPE REF TO /fcbp/if_glt_package_lock OPTIONAL
         io_status        TYPE REF TO /fcbp/if_glt_package_status OPTIONAL
-        io_consistency   TYPE REF TO /fcbp/cl_glt_package_consistency OPTIONAL.
+        io_consistency   TYPE REF TO /fcbp/cl_glt_package_consistency OPTIONAL
+        io_source_read_recorder TYPE REF TO /fcbp/cl_glt_source_read_recorder OPTIONAL.
 
   PRIVATE SECTION.
     DATA mo_transfer_repo TYPE REF TO /fcbp/if_glt_repository.
@@ -24,6 +25,7 @@ CLASS /fcbp/cl_glt_package_preparer DEFINITION PUBLIC FINAL CREATE PUBLIC.
     DATA mo_lock TYPE REF TO /fcbp/if_glt_package_lock.
     DATA mo_status TYPE REF TO /fcbp/if_glt_package_status.
     DATA mo_consistency TYPE REF TO /fcbp/cl_glt_package_consistency.
+    DATA mo_source_read_recorder TYPE REF TO /fcbp/cl_glt_source_read_recorder.
 
     METHODS execute_prepare
       IMPORTING
@@ -195,6 +197,9 @@ CLASS /fcbp/cl_glt_package_preparer IMPLEMENTATION.
     ELSE.
       mo_consistency = NEW /fcbp/cl_glt_package_consistency( ).
     ENDIF.
+    mo_source_read_recorder = COND #(
+      WHEN io_source_read_recorder IS BOUND THEN io_source_read_recorder
+      ELSE NEW /fcbp/cl_glt_source_read_recorder( ) ).
   ENDMETHOD.
 
   METHOD /fcbp/if_glt_package_preparer~prepare_for_dispatch.
@@ -271,7 +276,24 @@ CLASS /fcbp/cl_glt_package_preparer IMPLEMENTATION.
           iv_package_id        = lv_package_id
           iv_build_mode        = iv_build_mode ).
 
-        DATA(lt_source_line) = mo_source_reader->read_source_lines( ls_source_request ).
+        DATA(lv_source_read_id) = mo_source_read_recorder->start( ls_source_request ).
+        TRY.
+            DATA(lt_source_line) = mo_source_reader->read_source_lines( ls_source_request ).
+            DATA(ls_source_result) = VALUE /fcbp/if_glt_src_types=>ty_source_read_result(
+              request           = ls_source_request
+              source_line       = lt_source_line
+              source_line_count = lines( lt_source_line )
+              source_hash       = calculate_source_hash( lt_source_line )
+              read_consistency  = /fcbp/if_glt_src_types=>c_read_consistency-stable ).
+            mo_source_read_recorder->complete(
+              iv_source_read_id = lv_source_read_id
+              is_result         = ls_source_result ).
+          CATCH /fcbp/cx_glt_source_read INTO DATA(lx_source_read).
+            mo_source_read_recorder->fail(
+              iv_source_read_id = lv_source_read_id
+              ix_error          = lx_source_read ).
+            RAISE EXCEPTION lx_source_read.
+        ENDTRY.
 
         IF iv_build_mode = /fcbp/if_glt_pkg_prep_types=>c_build_mode-dispatch.
           DATA(ls_current_graph) = read_current_candidate( ls_transfer ).
