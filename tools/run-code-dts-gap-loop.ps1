@@ -7,7 +7,9 @@ param(
     [ValidateRange(1, 1000)]
     [int]$MaxDiscoveryCycles = 10,
 
-    [switch]$ContinueExistingRegister
+    [switch]$ContinueExistingRegister,
+
+    [switch]$ContinueOnNeedsHuman
 )
 
 Set-StrictMode -Version Latest
@@ -288,11 +290,14 @@ function Commit-Iteration {
         [int]$Iteration,
 
         [AllowNull()]
-        [string]$GapId
+        [string]$GapId,
+
+        [string]$Outcome
     )
 
     $commitGapId = if ($GapId) { $GapId } else { "no-gaps" }
-    $message = "Resolve DTS gap iteration {0:D3} ({1})" -f $Iteration, $commitGapId
+    $commitAction = if ($Outcome -eq "needs_human") { "Defer" } else { "Resolve" }
+    $message = "$commitAction DTS gap iteration {0:D3} ({1})" -f $Iteration, $commitGapId
 
     foreach ($repository in @($ProjectRoot, $DtsRoot)) {
         Invoke-Git -Repository $repository -Arguments @("add", "--all") | Out-Null
@@ -695,7 +700,8 @@ required verification fails or cannot be completed.
         Write-Host "Validation: $($step.validation_passed)"
         Write-Host "Summary:    $($step.summary)"
 
-        if ($step.outcome -eq "needs_human") {
+        $needsHuman = $step.outcome -eq "needs_human"
+        if ($needsHuman -and -not $ContinueOnNeedsHuman) {
             Write-Warning "Automation stopped for a material human decision. See $Register."
             exit 2
         }
@@ -706,9 +712,11 @@ required verification fails or cannot be completed.
 
         $reportGapId = if ($step.gap_id) { [string]$step.gap_id } else { "no-gaps-in-register" }
         $iterationChanges = @($step.introduced_changes)
-        if ($cycleIteration -eq 1 -and -not $skipDiscovery) {
-            $iterationChanges += "Created the complete 17-stage discovery evidence set under docs/code-dts-discovery/$runId/cycle-$('{0:D3}' -f $discoveryCycle)."
+        if ($cycleIteration -eq 1) {
             $iterationChanges += "Created the immutable discovery-cycle history snapshot: $historyFileName."
+            if (-not $skipDiscovery) {
+                $iterationChanges += "Created the complete 17-stage discovery evidence set under docs/code-dts-discovery/$runId/cycle-$('{0:D3}' -f $discoveryCycle)."
+            }
         }
         Write-IterationReport `
             -Iteration $globalIteration `
@@ -721,7 +729,14 @@ required verification fails or cannot be completed.
             -IntroducedChanges $iterationChanges `
             -ValidationPassed ([bool]$step.validation_passed)
 
-        Commit-Iteration -Iteration $globalIteration -GapId $step.gap_id
+        Commit-Iteration `
+            -Iteration $globalIteration `
+            -GapId $step.gap_id `
+            -Outcome ([string]$step.outcome)
+
+        if ($needsHuman) {
+            Write-Warning "Deferred $($step.gap_id) for human review and continuing because -ContinueOnNeedsHuman is enabled."
+        }
 
         if ($step.done) {
             $registerExhausted = $true

@@ -51,6 +51,24 @@ rediscovery cycles until convergence or the cycle limit:
     -MaxDiscoveryCycles 3
 ```
 
+Use the existing register, defer validated gaps that still require a human
+decision, and continue with later open gaps:
+
+```powershell
+.\tools\run-code-dts-gap-loop.ps1 `
+    -ContinueExistingRegister `
+    -ContinueOnNeedsHuman `
+    -MaxIterations 5 `
+    -MaxDiscoveryCycles 1
+```
+
+`-ContinueOnNeedsHuman` is opt-in. Without it, a material human decision keeps
+the original fail-safe behavior: the script stops and leaves the iteration
+uncommitted. With it, a `needs_human` result is continued only when its scoped
+validation passed. The controller writes the iteration report, commits the
+decision as a deferred gap in both repositories, and advances to the next open
+gap. The deferred gap counts toward `-MaxIterations` and is not resolved.
+
 `-MaxGaps` remains a backward-compatible alias for `-MaxIterations`.
 `-MaxDiscoveryCycles` includes the initial cycle and defaults to `10`.
 
@@ -227,6 +245,12 @@ the remaining uncertainty could cause significant business, financial,
 security, compliance, compatibility, or destructive consequences, it makes no
 speculative change and marks the item `Needs Human Decision`.
 
+By default, that status stops the run. When `-ContinueOnNeedsHuman` is enabled,
+the controller persists the validated analysis as a deferred iteration and
+continues. Because only `Open` and `In Progress` entries are selected, a
+`Needs Human Decision` entry is skipped by later iterations until a person
+returns it to an actionable status or supplies the required decision.
+
 ### 7. Structured result
 
 Every resolution iteration returns JSON conforming to
@@ -262,8 +286,10 @@ The current iteration is committed only when validation succeeds.
 If validation fails, the script does not commit or create the next branch. It
 stops with the current branch and working changes intact for inspection.
 
-If a human decision is required, the script also stops without committing the
-iteration.
+If a human decision is required, the default behavior also stops without
+committing the iteration. With `-ContinueOnNeedsHuman`, a validated analysis is
+reported and committed as a human-decision deferral; an iteration whose
+validation failed still stops uncommitted.
 
 ### 9. Per-commit Markdown reports
 
@@ -292,6 +318,9 @@ The same report is written to both repositories, which gives each synchronized
 commit a local explanation even when that iteration changed only code or only
 DTS content. A zero-gap convergence commit also receives a report explaining
 the discovery result and the register/history artifacts it introduced.
+Deferred human-decision iterations receive the same report, with outcome
+`needs_human`, the unresolved decision, alternatives, evidence, and any
+documentation artifacts recorded by the analysis.
 
 ### 10. Coordinated commits
 
@@ -300,6 +329,13 @@ repositories with matching commit messages, for example:
 
 ```text
 Resolve DTS gap iteration 001 (GAP-001)
+```
+
+A continued human-decision iteration uses a distinct message so it cannot be
+mistaken for a resolution:
+
+```text
+Defer DTS gap iteration 003 (GAP-002)
 ```
 
 If one repository has no code or DTS changes, its companion report still gives
@@ -327,9 +363,10 @@ iteration.
 
 ### 12. Iteration and discovery-cycle limits
 
-`-MaxIterations` limits the number of gap-resolution attempts in each discovery
-cycle. `-MaxDiscoveryCycles` limits how many times the discover-and-resolve loop
-may run:
+`-MaxIterations` limits the number of gap-processing attempts in each discovery
+cycle. Resolutions and committed human-decision deferrals both consume one
+iteration. `-MaxDiscoveryCycles` limits how many times the discover-and-resolve
+loop may run:
 
 ```powershell
 .\tools\run-code-dts-gap-loop.ps1 `
@@ -363,7 +400,9 @@ The script never merges into the starting branch or `main` automatically.
 | Current register has no unresolved gaps | Yes | Yes | Verify with fresh discovery |
 | Fresh discovery finds zero gaps | Yes | No | Successful convergence |
 | Discovery-cycle limit reached | Yes | No | Controlled, not proven converged |
-| Human decision required | No | No | Stop for review |
+| Human decision required; switch absent | No | No | Stop for review |
+| Human decision required; switch enabled and validation passes | Yes, as deferred | Yes, if required | Continue |
+| Human decision required; switch enabled and validation fails | No | No | Stop with error |
 | Validation fails | No | No | Stop with error |
 | Codex command fails | No | No | Stop with error |
 | Repository dirty at startup | No | No | Stop during preflight |
@@ -396,6 +435,9 @@ explicit human decision.
 
 - A validation or human-decision stop intentionally leaves the current branch
   and changes uncommitted.
+- A human-decision deferral committed with `-ContinueOnNeedsHuman` remains
+  unresolved and must be reviewed before final integration even though the
+  automation continued past it.
 - Do not start another automated run until both repositories are clean again.
 - If commits become unsynchronized across repositories, inspect both logs and
   reconcile them manually before continuing.
