@@ -45,6 +45,51 @@ human-readable audit record. The completed JSON structure is documented by
 - Use a unique decision-set ID containing only letters, numbers, `.`, `_`, or
   `-`, for example `20260719-batch01`.
 
+## Browser admin UI
+
+The recommended interactive entry point is the local Human Decision Admin:
+
+```powershell
+cd C:\Users\Minja\source\repos\fcbp-gl-bridge
+.\tools\human-decision-admin\start-human-decision-admin.ps1
+```
+
+The launcher starts a loopback-only server at `http://127.0.0.1:8765/` and
+opens the UI in the default browser. Keep the PowerShell window open while the
+UI is in use. Stop it with the UI's **Stop local server** button or `Ctrl+C`.
+
+The UI provides this guided flow:
+
+1. Review the branch and clean/dirty state of both repositories.
+2. Select current `Needs Human Decision` gaps and create a decision batch.
+3. Complete structured decision fields without directly editing JSON.
+4. Save and validate the batch without changing the register.
+5. Confirm **Apply and commit** to reopen the gaps and commit both repositories.
+6. Optionally push the synchronized decision branch with a separate explicit
+   confirmation.
+
+The UI preserves generated titles, fingerprints, questions, and alternatives;
+only the human-maintained fields are written back. The existing
+`manage-code-dts-gap-decisions.ps1` remains the authority for generation,
+validation, register changes, audit artifacts, and paired commits.
+
+The server has no package dependencies. It binds only to `127.0.0.1`, rejects
+non-loopback clients, limits request size, validates identifiers, and requires
+a random per-process token for every modifying request. Repository paths and
+allowed operations are fixed by the launcher rather than accepted as browser
+commands. Do not expose the port through a proxy or firewall rule.
+
+Optional startup parameters:
+
+```powershell
+.\tools\human-decision-admin\start-human-decision-admin.ps1 `
+    -Port 8877 `
+    -NoBrowser
+```
+
+The remaining sections document the equivalent command-line workflow and the
+files managed by the UI.
+
 ## Recommended batch size
 
 Generate decisions in batches of no more than five gaps. This aligns one human
